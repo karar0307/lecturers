@@ -1,0 +1,1017 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Laboratory Instruments Lectures</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout concept: lecture-notebook shell. Sticky bar (language + device tabs), one device at a time, numbered sections in lecture order, each with a live instrument widget. Accent changes per device. */
+:root{
+  --bg:#f3f6f9; --surface:#ffffff; --surface2:#e8eef4; --fg:#14202b; --muted:#53657a; --line:#d2dce6;
+  --ecg:#c4372c; --cen:#17855a; --col:#9c3a8c; --spe:#2759c0;
+  --accent:var(--ecg);
+  --ok:#14744a; --bad:#b3261e; --warn-bg:#fff3d1; --warn-fg:#664700; --warn-line:#e6c36a;
+  --trace:#14202b; --grid:#e3b9b5; --grid2:#cf8d87; --paper:#fff8f6;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e151b; --surface:#16212a; --surface2:#1d2b36; --fg:#e7eef5; --muted:#9db0c2; --line:#2a3b49;
+  --ecg:#ff7468; --cen:#4cc690; --col:#df86d0; --spe:#7ba3ff;
+  --ok:#52d08f; --bad:#ff8a80; --warn-bg:#3a2f12; --warn-fg:#f0d68a; --warn-line:#6b5720;
+  --trace:#e7eef5; --grid:#4a2c2b; --grid2:#7a3f3b; --paper:#1a1214; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e151b; --surface:#16212a; --surface2:#1d2b36; --fg:#e7eef5; --muted:#9db0c2; --line:#2a3b49;
+  --ecg:#ff7468; --cen:#4cc690; --col:#df86d0; --spe:#7ba3ff;
+  --ok:#52d08f; --bad:#ff8a80; --warn-bg:#3a2f12; --warn-fg:#f0d68a; --warn-line:#6b5720;
+  --trace:#e7eef5; --grid:#4a2c2b; --grid2:#7a3f3b; --paper:#1a1214; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 'IBM Plex Sans','IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+#app[data-dev="ecg"]{--accent:var(--ecg)} #app[data-dev="centrifuge"]{--accent:var(--cen)}
+#app[data-dev="colorimeter"]{--accent:var(--col)} #app[data-dev="spectrophotometer"]{--accent:var(--spe)}
+#app[data-dev="start"]{--accent:var(--spe)}
+.wrap{max-width:1020px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.ar{font-family:'IBM Plex Sans Arabic','IBM Plex Sans',system-ui,sans-serif;line-height:1.85;font-size:1.04em}
+.lang-en .ar{display:none!important} .lang-ar .en{display:none!important}
+.lang-both .en,.lang-both .ar{display:block}
+.lang-both .ar{margin-top:.12em}
+.lang-both .inl .en,.lang-both .inl .ar{display:inline}
+.ltr{direction:ltr;unicode-bidi:isolate}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);border-bottom:1px solid var(--line)}
+.topin{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:10px 6px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.mark{width:26px;height:26px;border-radius:6px;background:conic-gradient(from 200deg,var(--ecg),var(--cen),var(--col),var(--spe),var(--ecg));flex:none}
+.brand b{font-weight:600;font-size:1rem;line-height:1.25;display:block}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{all:unset;cursor:pointer;padding:6px 12px;font-size:.85rem;font-weight:500;color:var(--muted)}
+.seg button+button{border-inline-start:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.seg button:focus-visible,.tab:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tabs{display:flex;gap:4px;overflow-x:auto;padding-block:2px 0;scrollbar-width:thin}
+.tab{all:unset;cursor:pointer;flex:none;padding:8px 12px 10px;font-size:.88rem;font-weight:500;color:var(--muted);position:relative;white-space:nowrap}
+.tab small{display:block;font-size:.7rem;opacity:.8;font-weight:400}
+.tab[aria-current="page"]{color:var(--fg)}
+.tab[aria-current="page"]::after{content:"";position:absolute;inset:auto 8px 0 8px;height:3px;border-radius:3px 3px 0 0;background:var(--tabc,var(--accent))}
+.tab .bar{position:absolute;inset:auto 8px 0 8px;height:3px;border-radius:3px;background:var(--line);overflow:hidden}
+.tab .bar i{display:block;height:100%;background:var(--tabc,var(--accent));width:0}
+.tab[aria-current="page"] .bar{display:none}
+main{padding-block:20px 60px}
+/* section nav */
+.secnav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 18px}
+.chip{all:unset;cursor:pointer;display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border:1px solid var(--line);border-radius:999px;font-size:.82rem;background:var(--surface);color:var(--fg)}
+.chip .n{font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+.chip.done{border-color:var(--accent)} .chip.done .n{color:var(--accent)}
+.chip:hover{border-color:var(--accent)}
+.devhead{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.devhead .kick{font-family:var(--mono);font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+h1,h2,h3,h4{line-height:1.25;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.2vw,2.4rem);font-weight:600}
+h2{font-size:1.5rem;font-weight:600}
+h3{font-size:1.2rem;font-weight:600;display:flex;gap:.6rem;align-items:baseline}
+h3 .num{font-family:var(--mono);font-weight:500;color:var(--accent);font-size:.95rem;flex:none}
+h4{font-size:1rem;font-weight:600}
+.sub{color:var(--muted);max-width:68ch}
+.sec{padding-block:22px;border-top:1px solid var(--line);scroll-margin-top:150px;display:flex;flex-direction:column;gap:14px}
+.sec>p,.sec>ul,.lead{max-width:72ch;margin:0}
+p{margin:0}
+ul{margin:0;padding-inline-start:1.2em;display:flex;flex-direction:column;gap:6px}
+li::marker{color:var(--accent)}
+b,strong{font-weight:600}
+.donebar{display:flex;justify-content:flex-end;margin-top:4px}
+.donebtn{all:unset;cursor:pointer;font-size:.82rem;padding:5px 12px;border:1px solid var(--line);border-radius:8px;color:var(--muted);background:var(--surface)}
+.donebtn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+/* cards & widgets */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.lab{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden}
+.lab>.lh{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;background:var(--surface2);border-bottom:1px solid var(--line);font-size:.8rem;font-weight:600}
+.lab>.lh .tag{font-family:var(--mono);font-weight:500;color:var(--accent);letter-spacing:.04em;text-transform:uppercase;font-size:.7rem}
+.lab>.lb{padding:14px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:12px}
+.grid2>*,.grid3>*{min-width:0}
+.note{border:1px solid var(--warn-line);background:var(--warn-bg);color:var(--warn-fg);border-radius:10px;padding:10px 14px;font-size:.93rem}
+.note b:first-child{display:inline}
+.info{border-inline-start:3px solid var(--accent);background:var(--surface);padding:10px 14px;border-radius:0 8px 8px 0;font-size:.95rem}
+[dir="rtl"] .info{border-radius:8px 0 0 8px}
+.formula{font-family:var(--mono);font-size:.98rem;background:var(--surface2);border-radius:8px;padding:8px 12px;overflow-x:auto;direction:ltr;text-align:left;white-space:nowrap}
+.scroll{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:start;vertical-align:top}
+th{font-weight:600;background:var(--surface2);font-size:.82rem}
+tr.on td{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+tr.now td{background:color-mix(in srgb,var(--accent) 26%,transparent);font-weight:500}
+button.btn,.btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 14px;border-radius:8px;background:var(--accent);color:#fff;font-weight:500;font-size:.9rem;text-align:center}
+.dark-text{color:#111}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn{color:#0e151b}}
+:root[data-theme="dark"] .btn{color:#0e151b}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn[disabled],.btn[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{all:unset;cursor:pointer;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:.85rem;text-align:center}
+.pill[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pill[aria-pressed="true"]{color:#0e151b}}
+:root[data-theme="dark"] .pill[aria-pressed="true"]{color:#0e151b}
+.ctl{display:grid;grid-template-columns:minmax(90px,150px) 1fr 74px;gap:10px;align-items:center;font-size:.88rem}
+.ctl label{color:var(--muted)}
+.ctl output{font-family:var(--mono);font-size:.85rem;text-align:end}
+input[type=range]{width:100%;accent-color:var(--accent);min-width:0}
+input[type=number],select{font:inherit;font-family:var(--mono);font-size:.9rem;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);width:100%;min-width:0}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stat{background:var(--surface2);border-radius:8px;padding:8px 12px}
+.stat small{display:block;color:var(--muted);font-size:.75rem}
+.stat strong{font-family:var(--mono);font-size:1.15rem;font-weight:500;direction:ltr;display:block;text-align:start;unicode-bidi:isolate}
+.stat.bad strong{color:var(--bad)} .stat.good strong{color:var(--ok)}
+.detail{background:var(--surface2);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-height:92px}
+.detail h4{color:var(--accent)}
+.chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.node{all:unset;cursor:pointer;padding:8px 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);font-size:.86rem;text-align:center;line-height:1.35;max-width:100%}
+.node[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface));font-weight:500}
+.arrow{color:var(--muted);font-family:var(--mono)}
+.lang-ar .arrow{display:inline-block;transform:scaleX(-1)}
+.sublabel{font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-top:2px}
+svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',system-ui,sans-serif;fill:var(--fg)}
+.ecgsvg{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:8px}
+.reg{fill:var(--accent);opacity:0;transition:opacity .15s} .reg.on{opacity:.2}
+.tracepath{fill:none;stroke:var(--trace);stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.cells{display:grid;grid-template-columns:repeat(24,1fr);gap:2px;direction:ltr}
+.cell{height:42px;border-radius:5px;background:#3a7bd5}
+/* cards: flash */
+.fc{all:unset;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:4px;min-height:86px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:.9rem}
+.fc .t{font-weight:600;color:var(--accent)}
+.fc[aria-pressed="true"]{background:var(--surface2)}
+.fc .hint{font-size:.7rem;color:var(--muted);font-family:var(--mono)}
+/* quiz */
+.q .qh{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{all:unset;cursor:pointer;padding:9px 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);font-size:.93rem}
+.opt:hover{border-color:var(--accent)}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--surface))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--surface))}
+.opt[disabled]{cursor:default}
+.why{padding:10px 12px;background:var(--surface2);border-radius:8px;font-size:.9rem}
+.score{font-family:var(--mono);font-size:2rem;color:var(--accent)}
+/* order game */
+.ordrow{display:flex;gap:8px;align-items:flex-start;padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);font-size:.9rem}
+.ordrow .i{font-family:var(--mono);color:var(--muted);flex:none;width:1.6em}
+.ordrow.right{border-color:var(--ok)} .ordrow.wrong{border-color:var(--bad)}
+.ordlist{display:flex;flex-direction:column;gap:6px;min-height:44px}
+.empty{color:var(--muted);font-size:.88rem;padding:8px 2px}
+/* start page */
+.devcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}
+.dcard{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--c)}
+.dcard:hover{border-color:var(--c)}
+.dcard .k{font-family:var(--mono);font-size:.74rem;color:var(--c);letter-spacing:.05em;text-transform:uppercase}
+.dcard .pg{height:5px;border-radius:5px;background:var(--surface2);overflow:hidden}
+.dcard .pg i{display:block;height:100%;background:var(--c);width:0}
+.dcard small{color:var(--muted)}
+.nextdev{display:flex;justify-content:flex-end;padding-top:20px;border-top:1px solid var(--line)}
+canvas{max-width:100%;border-radius:8px;background:var(--surface2);display:block}
+.cuv{width:70px;height:130px;border:2px solid var(--fg);border-top:none;border-radius:0 0 10px 10px;position:relative;overflow:hidden;background:rgba(255,255,255,.06)}
+.cuv i{position:absolute;inset:auto 0 0 0;display:block}
+.beam{height:14px;border-radius:7px;flex:1;min-width:40px}
+.lightrow{display:flex;align-items:center;gap:10px;direction:ltr}
+.bar2{height:12px;border-radius:6px;background:var(--surface2);overflow:hidden}
+.bar2 i{display:block;height:100%;width:0;border-radius:6px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+@keyframes flow{to{stroke-dashoffset:-24}}
+.flow{stroke-dasharray:6 6;animation:flow 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shake{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(5px,-3px) rotate(8deg)}50%{transform:translate(-5px,4px) rotate(-8deg)}75%{transform:translate(4px,3px) rotate(6deg)}}
+.spinning{animation:spin .6s linear infinite;transform-origin:110px 110px}
+.shaking{animation:shake .22s linear infinite;transform-origin:110px 110px}
+.slot{cursor:pointer}
+.slot circle:first-child{fill:var(--surface2);stroke:var(--muted);stroke-width:1.5}
+.slot.has circle:first-child{fill:var(--accent);stroke:var(--accent)}
+@media (max-width:560px){.ctl{grid-template-columns:1fr 64px}.ctl label{grid-column:1/-1}}
+</style>
+
+<div id="app" class="lang-both" data-dev="start">
+<header class="top">
+  <div class="wrap topin">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><div><b b>Laboratory Instruments|||الأجهزة المختبرية</b></div></div>
+    <div class="seg" role="group" aria-label="Language">
+      <button type="button" data-lang="ar" aria-pressed="false">العربية</button>
+      <button type="button" data-lang="both" aria-pressed="true">EN + عربي</button>
+      <button type="button" data-lang="en" aria-pressed="false">English</button>
+    </div>
+  </div>
+  <nav class="wrap tabs" id="tabs" aria-label="Devices"></nav>
+</header>
+
+<main class="wrap">
+
+<!-- ============ START ============ -->
+<article class="dev" id="dev-start" data-dev="start">
+  <div class="devhead">
+    <div class="kick" b>Fourth year · Biomedical Engineering · 1st semester 2026–2027|||المرحلة الرابعة · الهندسة الطبية الحيوية · الفصل الأول 2026–2027</div>
+    <h1 b>Laboratory Instruments: interactive lectures|||الأجهزة المختبرية: محاضرات تفاعلية</h1>
+    <p class="sub" b>Four lectures in the order of your files: ECG, Centrifuge, Colorimeter, Spectrophotometer. Each one has the lecture content in English and Arabic, a live widget for every main idea, flashcards and a quiz.|||أربع محاضرات بنفس ترتيب ملفاتك: ECG، جهاز الطرد المركزي، الكولوريميتر، السبكتروفوتوميتر. كل محاضرة فيها المحتوى بالإنجليزية والعربية، وأداة تفاعلية لكل فكرة أساسية، وبطاقات مراجعة واختبار قصير.</p>
+  </div>
+  <div class="devcards" id="devcards"></div>
+
+  <section class="sec">
+    <h3 b>How to use this page|||كيف تستخدم هذه الصفحة</h3>
+    <ul>
+      <li b>Switch language at the top: Arabic only, English only, or both together.|||غيّر اللغة من الأعلى: عربي فقط، إنجليزي فقط، أو الاثنتين معاً.</li>
+      <li b>Click the parts of a diagram, drag the sliders, and press the buttons. The numbers and pictures change as they would on the real instrument.|||اضغط على أجزاء المخططات، وحرّك المنزلقات، واضغط الأزرار. الأرقام والصور تتغير كما تتغير في الجهاز الحقيقي.</li>
+      <li b>Press "Mark as studied" at the end of each section. Your progress and quiz scores stay in this browser.|||اضغط «تمت دراسته» في نهاية كل قسم. تبقى نسبة التقدم ونتائج الاختبارات محفوظة في هذا المتصفح.</li>
+    </ul>
+  </section>
+
+  <section class="sec">
+    <h3 b>Things to check in the slides|||ملاحظات على الشرائح (للتأكد)</h3>
+    <p b>While preparing these pages I found a few places where the printed slides look like typing or conversion errors. The pages use the corrected version and say so where it matters. Confirm with your lecturer if the exam asks for the slide wording.|||أثناء إعداد الصفحات وجدت أماكن تبدو فيها الشرائح المطبوعة فيها أخطاء طباعة أو تحويل. الصفحات تستخدم النسخة المصححة وتنبّه إلى ذلك عند الحاجة. تأكد من المحاضر إذا كان الامتحان يطلب نص الشريحة حرفياً.</p>
+    <div class="scroll"><table>
+      <tr><th b>Where|||أين</th><th b>Slide says|||الشريحة تقول</th><th b>Used here|||المستخدم هنا</th></tr>
+      <tr><td b>Centrifuge: RCF|||الطرد المركزي: RCF</td><td class="mono">RFC = 1,118 × R × (rpm/1000)<br>g = (1.118 × 10-5) × R × S</td><td class="mono">RCF = 1.118×10⁻⁵ × R × rpm²<br>= 11.18 × R × (rpm/1000)²<br><span b>(reproduces the slide's own example: 5,000 rpm, 7 cm = 1,957 ×g)|||(يعطي مثال الشريحة نفسه: 5,000 rpm و 7 cm = 1,957 ×g)</span></td></tr>
+      <tr><td b>ECG: Einthoven law|||ECG: قانون أينتهوفن</td><td class="mono">VI + VIII + VII</td><td class="mono">V<sub>II</sub> = V<sub>I</sub> + V<sub>III</sub></td></tr>
+      <tr><td b>ECG: unipolar leads|||ECG: الأقطاب أحادية القطب</td><td b>Wilson, 1894|||ويلسون، 1894</td><td b>Wilson's central terminal is usually dated 1934|||القطب المركزي لويلسون يُؤرَّخ عادةً إلى 1934</td></tr>
+      <tr><td b>Centrifuge: fixed-angle rotor|||الطرد المركزي: الدوّار ذو الزاوية الثابتة</td><td class="mono">250 to 400</td><td b>25° to 40° (the degree sign was lost)|||من 25° إلى 40° (رمز الدرجة ضاع في التحويل)</td></tr>
+      <tr><td b>ECG: chest leads|||ECG: أقطاب الصدر</td><td b>Says "two types of unipolar leads" but only the limb leads page is in the file|||تذكر «نوعين من الأقطاب أحادية القطب» لكن ملف الشرائح فيه صفحة الأقطاب الطرفية فقط</td><td b>Chest leads are described briefly from the lecture text|||أقطاب الصدر مشروحة باختصار من نص المحاضرة</td></tr>
+    </table></div>
+  </section>
+</article>
+
+<!-- ============ ECG ============ -->
+<article class="dev" id="dev-ecg" data-dev="ecg" hidden>
+  <div class="devhead">
+    <div class="kick" b>Lecture 2 · ECG|||المحاضرة 2 · ECG</div>
+    <h1 b>Electrocardiography (ECG)|||تخطيط القلب الكهربائي (ECG)</h1>
+    <p class="sub" b>How the heart makes an electrical signal, how the leads pick it up, and how the machine amplifies, isolates and records it.|||كيف يولّد القلب الإشارة الكهربائية، وكيف تلتقطها الأقطاب، وكيف يضخّمها الجهاز ويعزلها ويسجّلها.</p>
+  </div>
+  <nav class="secnav" data-for="ecg"></nav>
+
+  <section class="sec" id="ecg-1">
+    <h3 b>What is an ECG?|||ما هو جهاز ECG؟</h3>
+    <p b>The electrocardiograph records the electrical activity of the heart. The electrical signal comes before the mechanical pumping, so watching it is clinically valuable. It shows problems such as an inactive area of muscle (infarction) or an enlarged muscle (hypertrophy). It is used in catheterization labs, coronary care units and routine cardiology.|||جهاز تخطيط القلب يسجّل النشاط الكهربائي للقلب. الإشارة الكهربائية تسبق الانقباض الميكانيكي، لذلك فمراقبتها مهمة سريرياً. فهي تكشف مشاكل مثل منطقة عضلية غير فعّالة (احتشاء infarction) أو تضخم العضلة (hypertrophy). يُستخدم في مختبرات القسطرة ووحدات العناية بالقلب والتشخيص الروتيني.</p>
+    <p b>The first table-model ECG was built by Einthoven (made by the Cambridge Scientific Instrument Company, 1911) and used a string galvanometer.|||أول جهاز ECG مكتبي صنعه أينتهوفن (شركة Cambridge Scientific Instrument، عام 1911) وكان يعتمد على جلفانومتر الخيط.</p>
+    <div class="lab"><div class="lh"><span b>Design specifications: tap one|||مواصفات التصميم: اضغط على واحدة</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb"><div class="pills" id="specPills"></div><div class="detail" id="specDetail" b></div></div></div>
+  </section>
+
+  <section class="sec" id="ecg-2">
+    <h3 b>Where the signal comes from|||من أين تأتي الإشارة</h3>
+    <p b>The heart makes and conducts its own action potentials. The sino-atrial (SA) node sits in the top right atrium near the entry of the vena cava (25 to 30 mm long, 2 to 5 mm thick). It is the primary pacemaker and fires about 72 beats per minute at rest. The body is a purely resistive medium, so the field spreads to the rest of the heart. The wave crosses the atria at about 1 m/s, taking about 0.1 s, and reaches the AV node about 0.04 s later.|||للقلب نظامه الخاص لتوليد وتوصيل جهود الفعل. العقدة الجيبية الأذينية (SA node) تقع في أعلى الأذين الأيمن قرب مدخل الوريد الأجوف (طولها 25–30 mm وسمكها 2–5 mm). هي الناظم الأساسي (pacemaker) وتولّد نحو 72 نبضة في الدقيقة أثناء الراحة. الجسم وسط مقاوم بحت، فينتشر المجال إلى بقية القلب. تعبر الموجة الأذينين بسرعة نحو 1 m/s وتستغرق نحو 0.1 s، ثم تصل إلى العقدة الأذينية البطينية (AV node) بعد نحو 0.04 s.</p>
+    <p b>The tissue with the highest intrinsic rate sets the pace for everything below it. If the atria-to-AV link fails, the AV node uses its own rate. If conduction fails at the bundle of His, the ventricles beat at the rate of their own fastest region (20–40 per minute in the lecture table, against 70–80 for the SA node).|||النسيج ذو أعلى تردد ذاتي هو الذي يحدد إيقاع كل ما دونه. إذا انقطع الاتصال بين الأذينين والعقدة AV تعمل العقدة AV بتردّدها الخاص. وإذا انقطع التوصيل عند حزمة هيس (His) تنبض البطينات بتردد أسرع منطقة فيها (20–40 في الدقيقة في جدول المحاضرة مقابل 70–80 للعقدة SA).</p>
+    <div class="lab"><div class="lh"><span b>Conduction timeline: drag time from 0 to 700 ms|||خط زمن التوصيل: حرّك الزمن من 0 إلى 700 ms</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb">
+        <div id="condSvg"></div>
+        <div class="ctl"><label for="condT" b>Time after SA fires|||الزمن بعد إطلاق SA</label><input type="range" id="condT" min="0" max="700" value="180" step="1"><output id="condO" class="ltr"></output></div>
+        <div class="scroll"><table id="condTbl"><thead><tr><th b>ms|||ms</th><th b>Location|||الموقع</th><th b>Event|||الحدث</th><th b>ECG|||ECG</th><th b>m/s|||m/s</th></tr></thead><tbody></tbody></table></div>
+        <p class="sub" b>Atrial repolarization happens during ventricular depolarization, so it is normally hidden in the ECG.|||عودة الاستقطاب الأذيني تحدث أثناء زوال الاستقطاب البطيني، لذلك تكون مخفية عادةً في تخطيط القلب.</p>
+      </div></div>
+    <div class="info" b><b>Durrer et al., 1970.</b> They isolated a heart, placed up to 870 electrodes in the muscle, recorded on tape and replayed it slowly (equivalent to 960 mm/s paper) for better than 1 ms resolution. Ventricular activation starts at the inner wall of the left ventricle and spreads outward to the epicardium, ending more sideways.|||<b>دورر وزملاؤه، 1970.</b> عزلوا قلباً ووضعوا حتى 870 قطباً في العضلة وسجّلوا على شريط ثم أعادوا التشغيل ببطء (ما يعادل ورقاً بسرعة 960 mm/s) فحصلوا على دقة زمنية أفضل من 1 ms. يبدأ التنشيط البطيني من الجدار الداخلي للبطين الأيسر ويتجه نحو الخارج (epicardium) وينتهي بشكل جانبي أكثر.</div>
+  </section>
+
+  <section class="sec" id="ecg-3">
+    <h3 b>Waves and intervals|||الموجات والفواصل</h3>
+    <p b>The waves are named P, Q, R, S, T, U in alphabetical order. Their order never changes, but their size and direction depend on where the electrode sits on the chest. Tap a part of the trace or a button.|||تُسمّى الموجات P وQ وR وS وT وU بالترتيب الأبجدي. ترتيبها ثابت لكن حجمها واتجاهها يتغيران حسب مكان القطب على الصدر. اضغط على جزء من التخطيط أو على أحد الأزرار.</p>
+    <div class="lab"><div class="lh"><span b>ECG wave explorer (drawn to paper scale)|||مستكشف موجات ECG (برسم مطابق لمقياس الورق)</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb"><div id="waveSvg"></div><div class="pills" id="wavePills"></div><div class="detail" id="waveDetail"></div></div></div>
+    <div class="lab"><div class="lh"><span b>ECG paper calculator|||حاسبة ورق ECG</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb">
+        <p class="sub" b>Paper is ruled in 1 mm squares with a heavy line every 5 mm. Routine speed is 25 mm/s, sensitivity 10 mm/mV. Count the squares on a strip and enter them.|||الورق مقسّم إلى مربعات 1 mm وخط سميك كل 5 mm. السرعة الروتينية 25 mm/s والحساسية 10 mm/mV. عُدّ المربعات على الشريط وأدخلها.</p>
+        <div class="grid2">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="ctl"><label for="pSpeed" b>Paper speed|||سرعة الورق</label><select id="pSpeed"><option value="25">25 mm/s</option><option value="50">50 mm/s</option></select><span></span></div>
+            <div class="ctl"><label for="pRR" b>R–R distance (mm)|||المسافة R–R (mm)</label><input type="range" id="pRR" min="8" max="50" value="20"><output id="pRRo"></output></div>
+            <div class="ctl"><label for="pQT" b>Q–T distance (mm)|||المسافة Q–T (mm)</label><input type="range" id="pQT" min="5" max="25" value="9"><output id="pQTo"></output></div>
+            <div class="ctl"><label for="pR" b>R height (mm)|||ارتفاع R (mm)</label><input type="range" id="pR" min="2" max="25" value="12"><output id="pRo"></output></div>
+          </div>
+          <div class="out" id="pOut"></div>
+        </div>
+        <div class="formula">HR = 60 / RR(s)    QTc = QT / √RR    1 mm = 40 ms @ 25 mm/s</div>
+      </div></div>
+  </section>
+
+  <section class="sec" id="ecg-4">
+    <h3 b>How the ECG is born|||كيف يتكوّن تخطيط القلب</h3>
+    <p b>Two properties of heart tissue explain the signal. First, cells are joined by low-resistance gap junctions, so current passes freely from cell to cell. Second, the space between cells is very narrow (under 25% of the volume), so currents inside and outside the cells flow parallel to the moving wavefront. The ECG records the extracellular behaviour on the chest surface, while a microelectrode inside one cell records the action potential itself.|||خاصيتان في النسيج القلبي تفسّران الإشارة. الأولى: الخلايا متصلة بوصلات فجوية (gap junctions) منخفضة المقاومة فيمر التيار بحرية من خلية إلى أخرى. الثانية: الحيّز بين الخلايا ضيق جداً (أقل من 25% من الحجم) فتجري التيارات داخل الخلايا وخارجها موازية لجبهة الموجة المتحركة. تخطيط القلب يسجّل السلوك خارج الخلوي على سطح الصدر، أما القطب الدقيق داخل الخلية فيسجّل جهد الفعل نفسه.</p>
+    <div class="lab"><div class="lh"><span b>Wavefront through a strip of cells (schematic)|||جبهة الموجة عبر شريط من الخلايا (تخطيطي)</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb">
+        <div class="pills" id="genMode"></div>
+        <div class="cells" id="genCells"></div>
+        <div class="ctl"><label for="genP" b>Wavefront position|||موضع جبهة الموجة</label><input type="range" id="genP" min="0" max="100" value="45"><output id="genO"></output></div>
+        <div id="genSvg"></div>
+        <div class="detail" id="genDetail"></div>
+      </div></div>
+    <div class="scroll"><table>
+      <tr><th></th><th b>Depolarization|||زوال الاستقطاب</th><th b>Repolarization|||عودة الاستقطاب</th></tr>
+      <tr><td b>Nature|||الطبيعة</td><td b>A propagating wave: one cell's field triggers the next|||موجة منتشرة: مجال خلية يحفّز الخلية المجاورة</td><td b>A proceeding event: each cell recovers after its own action potential ends|||حدث متتابع: كل خلية تتعافى بعد انتهاء جهد الفعل الخاص بها</td></tr>
+      <tr><td b>Zone width|||عرض المنطقة</td><td class="mono">≈ 1 mm</td><td class="mono">≈ 100 mm</td></tr>
+      <tr><td b>Ion flow|||حركة الأيونات</td><td b>Na⁺ enters the cell|||دخول Na⁺ إلى الخلية</td><td b>K⁺ leaves the cell|||خروج K⁺ من الخلية</td></tr>
+      <tr><td b>Ventricles|||البطينان</td><td b>Starts at the endocardium (inner wall), moves to the epicardium|||يبدأ من الشغاف (الجدار الداخلي) ويتجه إلى الخارج (epicardium)</td><td b>Epicardial action potentials are shorter, so the outer layer recovers first|||جهود الفعل في الطبقة الخارجية أقصر، فتتعافى الطبقة الخارجية أولاً</td></tr>
+    </table></div>
+  </section>
+
+  <section class="sec" id="ecg-5">
+    <h3 b>Lead system|||نظام الأقطاب (Leads)</h3>
+    <p b>A lead is the trace of the voltage difference between two sites on the body. Example: if one electrode sees 1 mV and the other 0.2 mV at the same moment, the recorded wave is 0.8 mV.|||الـ Lead هو منحنى فرق الجهد بين موضعين على الجسم. مثال: إذا رأى قطب 1 mV ورأى الآخر 0.2 mV في اللحظة نفسها فالموجة المسجلة 0.8 mV.</p>
+    <div class="grid2">
+      <div class="card"><h4 b>Bipolar (Einthoven, standard) leads|||الأقطاب ثنائية القطب (أينتهوفن)</h4>
+        <ul><li b>Lead I: RA and LA|||القطب I: الذراع اليمنى واليسرى (RA وLA)</li><li b>Lead II: RA and left leg (LL)|||القطب II: الذراع اليمنى والرجل اليسرى (LL)</li><li b>Lead III: LA and LL|||القطب III: الذراع اليسرى والرجل اليسرى</li><li b>The reference is the right leg, so three electrodes are always connected.|||المرجع هو الرجل اليمنى، لذلك تكون ثلاثة أقطاب متصلة دائماً.</li><li b>Einthoven treated the heart as a vector at the centre of an equilateral triangle. R is positive and largest in lead II.|||اعتبر أينتهوفن القلب متجهاً في مركز مثلث متساوي الأضلاع. الموجة R موجبة وأكبر ما تكون في القطب II.</li></ul></div>
+      <div class="card"><h4 b>Unipolar leads|||الأقطاب أحادية القطب</h4>
+        <ul><li b>One exploring electrode against a central terminal (several electrodes tied together, near the potential of the body centre). Introduced by Wilson.|||قطب استكشافي واحد مقابل قطب مركزي (عدة أقطاب مربوطة معاً بجهد قريب من مركز الجسم). قدّمه ويلسون.</li><li b>Limb (augmented) leads: aVR, aVL, aVF. Two limbs are tied together through "averaging resistances" and the third is recorded against them.|||الأقطاب الطرفية المعزَّزة: aVR وaVL وaVF. يُربط طرفان معاً عبر «مقاومات المتوسط» ويُسجَّل الثالث مقابلهما.</li><li b>Chest leads: the exploring electrode sits on the chest near the heart, where potentials are larger than at the limbs.|||أقطاب الصدر: يوضع القطب الاستكشافي على الصدر قرب القلب حيث الجهود أكبر منها في الأطراف.</li></ul></div>
+    </div>
+    <div class="lab"><div class="lh"><span b>Einthoven triangle and lead calculator|||مثلث أينتهوفن وحاسبة الأقطاب</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb"><div class="grid2">
+        <div><div id="triSvg"></div><div class="pills" id="triPills" style="margin-top:8px"></div></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="ctl"><label for="phR">Φ<sub>R</sub> (RA)</label><input type="range" id="phR" min="-1" max="1" step="0.05" value="-0.3"><output id="phRo"></output></div>
+          <div class="ctl"><label for="phL">Φ<sub>L</sub> (LA)</label><input type="range" id="phL" min="-1" max="1" step="0.05" value="0.1"><output id="phLo"></output></div>
+          <div class="ctl"><label for="phF">Φ<sub>F</sub> (LL)</label><input type="range" id="phF" min="-1" max="1" step="0.05" value="0.6"><output id="phFo"></output></div>
+          <div class="out" id="triOut"></div>
+          <div class="formula">V_I = Φ_L − Φ_R<br>V_II = Φ_F − Φ_R<br>V_III = Φ_F − Φ_L<br>V_II = V_I + V_III</div>
+        </div></div>
+        <div class="detail" id="triDetail"></div></div></div>
+  </section>
+
+  <section class="sec" id="ecg-6">
+    <h3 b>Inside the ECG machine|||داخل جهاز ECG</h3>
+    <p b>Electrodes feed the lead selector, which picks them two by two. Through capacitive coupling the signal goes symmetrically to a long-tail-pair differential preamplifier (three or four stages, with negative feedback from the last stage to the first). Its output goes to a push-pull power amplifier, whose output drives the pen motor. The pen position feeds back through an R–C network that damps the pen motor. Tap a block.|||تذهب الأقطاب إلى مفتاح اختيار القطب (lead selector) الذي ينتقيها اثنين اثنين. عبر الاقتران السعوي تذهب الإشارة بشكل متماثل إلى مضخم تفاضلي أولي من نوع الزوج ذي الذيل الطويل (ثلاث أو أربع مراحل مع تغذية عكسية سالبة من المرحلة الأخيرة إلى الأولى). خرجه يذهب إلى مضخم قدرة من نوع push-pull يقود محرك القلم. وموضع القلم يعود كتغذية خلفية عبر شبكة R–C تعمل كمخمّد لمحرك القلم. اضغط على أي كتلة.</p>
+    <div class="lab"><div class="lh"><span b>Block diagram (Fig. 7)|||المخطط الصندوقي (شكل 7)</span><span class="tag" b>Interactive|||تفاعلي</span></div><div class="lb" id="ecgChain1"></div></div>
+    <h4 b>Isolated preamplifier|||المضخم الأولي المعزول</h4>
+    <p b>Older machines tied the right-leg electrode to the chassis and ground, giving any ground-seeking current a path through the patient. With intracardiac catheters this causes a microshock hazard. The American Heart Association limit is 10 µA of leakage from the patient leads to ground. So the patient side is isolated from the mains.|||الأجهزة القديمة كانت تربط قطب الرجل اليمنى بهيكل الجهاز والأرضي، فيصبح هناك مسار لأي تيار يبحث عن الأرضي عبر المريض. ومع قسطرة القلب يسبب هذا خطر الصدمة الميكروية (microshock). حدّ جمعية القلب الأمريكية هو 10 µA تسرّب من أقطاب المريض إلى الأرضي. لذلك تُعزل جهة المريض عن الشبكة الكهربائية.</p>
+    <div class="lab"><div class="lh"><span b>Isolation amplifier circuit (Fig. 8)|||دائرة مضخم العزل (شكل 8)</span><span class="tag" b>Interactive|||تفاعلي</span></div><div class="lb" id="ecgChain2"></div></div>
+    <div class="grid2">
+      <div class="card"><h4 b>Recording paper|||ورق التسجيل</h4><p b>Time and heart rate are read horizontally. Amplitude is read vertically in millivolts. Routine speed 25 mm/s, sensitivity usually 10 mm/mV. A "stand-by" mode moves the stylus but keeps the paper still, so you can set gain and baseline without wasting paper.|||الزمن ومعدل القلب يُقرآن أفقياً. السعة تُقرأ عمودياً بالميلي فولت. السرعة الروتينية 25 mm/s والحساسية عادةً 10 mm/mV. وضع الانتظار (stand-by) يحرّك القلم دون تحريك الورق، فتضبط الكسب وخط الأساس دون هدر الورق.</p></div>
+      <div class="card"><h4 b>Auxiliary circuits|||الدوائر المساعدة</h4><p b>They supply a 1 mV calibration signal, block the amplifier automatically while the lead switch changes, and may include speed control for the chart motor.|||توفر إشارة معايرة 1 mV، وتحجب المضخم تلقائياً أثناء تبديل القطب، وقد تتضمن دائرة تحكم بسرعة محرك الورق.</p></div>
+    </div>
+  </section>
+
+  <section class="sec" id="ecg-7">
+    <h3 b>Review|||المراجعة</h3>
+    <div class="info" b><b>Exam focus.</b> Be able to (1) list P, QRS, ST, T and say what each means, (2) draw the Einthoven triangle and state V_II = V_I + V_III, (3) explain why the patient circuit is isolated (10 µA), (4) follow the block diagram, (5) compute HR and QTc from the paper.|||<b>تركيز الامتحان.</b> تأكد أنك تستطيع (1) ذكر P وQRS وST وT ومعنى كل منها، (2) رسم مثلث أينتهوفن وذكر V_II = V_I + V_III، (3) شرح سبب عزل دائرة المريض (10 µA)، (4) تتبع المخطط الصندوقي، (5) حساب HR وQTc من الورق.</div>
+    <h4 b>Flashcards: tap to flip|||بطاقات المراجعة: اضغط للقلب</h4><div class="grid3" id="ecgCards"></div>
+    <h4 b>Quiz|||اختبار قصير</h4><div class="card q" id="ecgQuiz"></div>
+  </section>
+  <div class="nextdev"><button class="btn" data-go="centrifuge" type="button"><span b>Next: Centrifuge →|||التالي: الطرد المركزي →</span></button></div>
+</article>
+<!-- ============ CENTRIFUGE ============ -->
+<article class="dev" id="dev-centrifuge" data-dev="centrifuge" hidden>
+  <div class="devhead">
+    <div class="kick" b>Lecture 4 · Centrifuge|||المحاضرة 4 · الطرد المركزي</div>
+    <h1 b>Centrifuge|||جهاز الطرد المركزي</h1>
+    <p class="sub" b>Separating particles by spinning them: the principle, the six types, RCF, the parts, the rotors and how to keep the machine safe.|||فصل الجسيمات بالدوران: المبدأ، الأنواع الستة، القوة النسبية RCF، الأجزاء، الدوّارات، وكيفية الحفاظ على سلامة الجهاز.</p>
+  </div>
+  <nav class="secnav" data-for="centrifuge"></nav>
+
+  <section class="sec" id="cen-1">
+    <h3 b>Principle|||المبدأ</h3>
+    <p b>A laboratory centrifuge is a motor-driven device that spins liquid samples at high speed. It works by sedimentation: the centripetal acceleration separates substances of greater and lesser density. Different masses feel different centrifugal forces at the same speed and distance from the centre, like two balls of different mass swung on strings. A centrifuge is a way to multiply the effect of gravity: clay settles from water by itself, but spinning does it much faster.|||جهاز الطرد المركزي المختبري جهاز بمحرك يدوّر العينات السائلة بسرعة عالية. يعمل بمبدأ الترسيب: التسارع المركزي يفصل المواد الأعلى كثافة عن الأقل كثافة. الكتل المختلفة تتعرض لقوى طاردة مختلفة عند السرعة نفسها والبعد نفسه عن المركز، مثل كرتين مختلفتي الكتلة تُدوَّران بخيطين. فالجهاز طريقة لمضاعفة تأثير الجاذبية: الطين يترسب من الماء وحده لكن الدوران يجعل ذلك أسرع بكثير.</p>
+    <p b>Separation depends on particle size, shape and density, the viscosity of the medium, and rotor speed. Factors in the lecture: density of sample and solution, temperature/viscosity, distance the particles travel, and rotation speed.|||يعتمد الفصل على حجم الجسيمات وشكلها وكثافتها، ولزوجة الوسط، وسرعة الدوّار. العوامل في المحاضرة: كثافة العينة والمحلول، الحرارة/اللزوجة، المسافة التي تقطعها الجسيمات، وسرعة الدوران.</p>
+    <div class="lab"><div class="lh"><span b>Sedimentation sandbox: gravity versus centrifuge, same time|||مختبر الترسيب: الجاذبية مقابل الطرد، في الزمن نفسه</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb">
+        <canvas id="sedCv" width="560" height="220" aria-label="Sedimentation animation"></canvas>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="sedPlay" type="button">▶ / ❚❚</button><button class="btn ghost" id="sedReset" type="button"><span b>Reset|||إعادة</span></button></div>
+        <div class="grid2">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="ctl"><label for="sedRpm">rpm</label><input type="range" id="sedRpm" min="500" max="12000" step="100" value="4000"><output id="sedRpmO"></output></div>
+            <div class="ctl"><label for="sedDen" b>Density difference Δρ|||فرق الكثافة Δρ</label><input type="range" id="sedDen" min="-0.5" max="1" step="0.05" value="0.6"><output id="sedDenO"></output></div>
+            <div class="ctl"><label for="sedTemp" b>Temperature (°C)|||درجة الحرارة (°C)</label><input type="range" id="sedTemp" min="4" max="40" step="1" value="20"><output id="sedTempO"></output></div>
+          </div>
+          <div class="out" id="sedOut"></div>
+        </div>
+        <p class="sub" b>Left tube: 1 ×g. Right tube: spinning at the chosen rpm (rotor radius 8 cm). Heavier particles sink, lighter ones float, and with no density difference they stay put. Colder liquid is more viscous, so everything moves slower. Speeds are schematic.|||الأنبوب الأيسر: 1 ×g. الأيمن: يدور بالسرعة المختارة (نصف قطر الدوّار 8 cm). الجسيمات الأثقل تغوص والأخف تطفو، وإذا لم يوجد فرق كثافة تبقى مكانها. السائل البارد أكثر لزوجة فتتحرك الجسيمات أبطأ. السرعات تخطيطية.</p>
+      </div></div>
+  </section>
+
+  <section class="sec" id="cen-2">
+    <h3 b>Types of centrifuges|||أنواع أجهزة الطرد المركزي</h3>
+    <div class="lab"><div class="lh"><span b>The six types: tap one|||الأنواع الستة: اضغط على واحد</span><span class="tag" b>Interactive|||تفاعلي</span></div><div class="lb" id="cenTypes"></div></div>
+    <div class="card"><h4 b>Speed classes in the lecture (log scale)|||فئات السرعة في المحاضرة (مقياس لوغاريتمي)</h4><div id="speedLadder" style="margin-top:10px"></div>
+      <p class="sub" b>Simple units have fixed speeds, may have two selectable speeds, or a rheostat control that can be nonlinear. Others use stepper motors and servo systems, which must be verified regularly.|||الأجهزة البسيطة لها سرعات ثابتة أو سرعتان قابلتان للاختيار أو مقاوم متغير (rheostat) قد يكون غير خطي. وغيرها يستخدم محركات خطوية وأنظمة سيرفو ويجب التحقق منها دورياً.</p></div>
+    <div class="lab"><div class="lh"><span b>Match the application to the centrifuge|||طابق التطبيق مع نوع الجهاز</span><span class="tag" b>Interactive|||تفاعلي</span></div><div class="lb" id="cenMatch"></div></div>
+  </section>
+
+  <section class="sec" id="cen-3">
+    <h3 b>Sedimentation and RCF|||الترسيب وRCF</h3>
+    <p b>Heavier-than-solvent particles sink and lighter ones float; the bigger the density difference the faster they move. Two forces oppose the centrifugal force: buoyancy (the particle must push aside the liquid) and friction (as it moves through the solution). Particles move outward at a constant rate only when the centrifugal force exceeds both.|||الجسيمات الأثقل من المذيب تغوص والأخف تطفو، وكلما زاد فرق الكثافة زادت السرعة. توجد قوتان تعاكسان القوة الطاردة: الطفو (يجب أن تزيح الجسيمة السائل) والاحتكاك (أثناء حركتها في المحلول). تتحرك الجسيمات للخارج بمعدل ثابت فقط عندما تتفوق القوة الطاردة على القوتين.</p>
+    <p b>RCF (relative centrifugal force) is given in ×g, a multiple of Earth's gravity. Many microcentrifuges show only rpm, so you convert.|||القوة الطاردة النسبية RCF تُعطى بوحدة ×g أي مضاعفات جاذبية الأرض. كثير من أجهزة الطرد الصغيرة تعرض rpm فقط لذلك نحتاج إلى التحويل.</p>
+    <div class="formula">RCF = 1.118 × 10⁻⁵ × R(cm) × rpm²  =  11.18 × R × (rpm/1000)²</div>
+    <div class="note" b><b>Slide typo.</b> The slide prints "RFC = 1,118 × R × (rpm/1000)" and "g = (1.118 × 10-5) × R × S". Both leave out the square on the speed. The formula above gives the slide's own example (5,000 rpm, 7 cm → 1,957 ×g).|||<b>خطأ طباعي في الشريحة.</b> الشريحة تكتب "RFC = 1,118 × R × (rpm/1000)" و "g = (1.118 × 10-5) × R × S". كلاهما ينقصه تربيع السرعة. الصيغة أعلاه تعطي مثال الشريحة نفسه (5,000 rpm و 7 cm ← 1,957 ×g).</div>
+    <div class="lab"><div class="lh"><span b>RCF calculator|||حاسبة RCF</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb"><div class="grid2">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="ctl"><label for="rcfR" b>Rotor radius R (cm)|||نصف قطر الدوّار R (cm)</label><input type="range" id="rcfR" min="2" max="30" step="0.5" value="7"><output id="rcfRo"></output></div>
+          <div class="ctl"><label for="rcfS">rpm</label><input type="range" id="rcfS" min="500" max="30000" step="100" value="5000"><output id="rcfSo"></output></div>
+          <div><button class="btn ghost" id="rcfEx" type="button"><span b>Load the slide example|||حمّل مثال الشريحة</span></button></div>
+          <div class="ctl"><label for="rcfT" b>Target ×g (reverse)|||القيمة المطلوبة ×g (عكسياً)</label><input type="number" id="rcfT" min="1" value="2000"><span></span></div>
+        </div>
+        <div class="out" id="rcfOut"></div>
+      </div></div></div>
+  </section>
+
+  <section class="sec" id="cen-4">
+    <h3 b>Components|||المكوّنات</h3>
+    <p b>The simplest centrifuge has a single-speed motor, a mechanical timer and a rotor that holds samples at a fixed angle (20° to 55° in the lecture). Because the rotor sits on the motor shaft, an unbalanced load damages the motor and gives uneven speed.|||أبسط جهاز فيه محرك بسرعة واحدة ومؤقت ميكانيكي ودوّار يثبّت العينات بزاوية ثابتة (من 20° إلى 55° في المحاضرة). ولأن الدوّار مركّب على عمود المحرك فإن الحِمل غير المتوازن يتلف المحرك ويعطي سرعة غير منتظمة.</p>
+    <div class="lab"><div class="lh"><span b>Parts explorer|||مستكشف الأجزاء</span><span class="tag" b>Interactive|||تفاعلي</span></div><div class="lb" id="cenParts"></div></div>
+    <div class="lab"><div class="lh"><span b>Balance and interlock lab: click the slots to load tubes|||مختبر الاتزان والقفل: اضغط على الفتحات لوضع الأنابيب</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb"><div class="grid2">
+        <div id="balSvg" style="max-width:260px;margin:0 auto"></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="balLid" checked><span b>Lid closed|||الغطاء مغلق</span></label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="balSpin" type="button"><span b>Start|||تشغيل</span></button><button class="btn ghost" id="balClear" type="button"><span b>Clear|||تفريغ</span></button></div>
+          <div class="detail" id="balMsg"></div>
+          <p class="sub" b>If you only have a few samples, add "dummy tubes" (same mass) opposite them.|||إذا كانت العينات قليلة أضف أنابيب وهمية (dummy tubes) بنفس الكتلة في الجهة المقابلة.</p>
+        </div></div></div></div>
+  </section>
+
+  <section class="sec" id="cen-5">
+    <h3 b>Rotors|||الدوّارات (Rotors)</h3>
+    <p b>Rotors fall into three categories: swinging-bucket, fixed-angle and vertical. They differ in the type of centrifugation (differential, rate-zonal or isopycnic), the speed and the volume. Fixed-angle and swinging-bucket are most common for benchtop, low-speed and high-speed floor models. Vertical rotors are used mainly in ultracentrifugation.|||تنقسم الدوّارات إلى ثلاث فئات: الدلو المتأرجح (swinging-bucket) والزاوية الثابتة (fixed-angle) والعمودي (vertical). تختلف في نوع الطرد (تفاضلي differential أو مناطقي rate-zonal أو متساوي الكثافة isopycnic) وفي السرعة والحجم. الزاوية الثابتة والدلو المتأرجح هما الأكثر شيوعاً للأجهزة المكتبية ومنخفضة وعالية السرعة. أما العمودي فيُستخدم أساساً في الطرد الفائق.</p>
+    <div class="lab"><div class="lh"><span b>Rotor lab: spin and stop|||مختبر الدوّارات: دوّر ثم أوقف</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb"><div class="pills" id="rotType"></div>
+        <div class="grid2"><div id="rotSvg" style="max-width:340px;margin:0 auto"></div>
+          <div style="display:flex;flex-direction:column;gap:10px"><button class="btn" id="rotSpin" type="button"></button><div class="detail" id="rotDetail"></div></div></div></div></div>
+    <div class="scroll"><table>
+      <tr><th></th><th b>Swinging-bucket|||الدلو المتأرجح</th><th b>Fixed-angle|||الزاوية الثابتة</th><th b>Vertical|||العمودي</th></tr>
+      <tr><td b>Tube while spinning|||الأنبوب أثناء الدوران</td><td b>Horizontal (vertical at rest)|||أفقي (عمودي عند التوقف)</td><td b>Fixed angle (25°–40° from the axis)|||زاوية ثابتة (25°–40° عن المحور)</td><td b>Always vertical|||عمودي دائماً</td></tr>
+      <tr><td b>Pellet|||الراسب</td><td b>Even at the tube bottom, stays after stopping|||منتظم في قاع الأنبوب ويبقى بعد التوقف</td><td b>Packs against the side and bottom, slides down when it stops: poorly packed|||يتكدس على الجدار والقاع وينزلق عند التوقف: راسب غير متماسك</td><td b>Short path to the wall, so short run time|||مسار قصير إلى الجدار لذلك زمن الدوران قصير</td></tr>
+      <tr><td b>Best for|||الأفضل لـ</td><td b>Large volumes (up to 12 L) at low speed|||الأحجام الكبيرة (حتى 12 L) بسرعة منخفضة</td><td b>Pelleting (differential separation), 0.2 mL to 1 L cavities|||الترسيب (فصل تفاضلي) وفتحات من 0.2 mL إلى 1 L</td><td b>Isopycnic runs in ultracentrifuges, e.g. DNA banding in CsCl|||الطرد متساوي الكثافة في الأجهزة الفائقة مثل فصل DNA في CsCl</td></tr>
+      <tr><td b>K factor|||معامل K</td><td>–</td><td b>Low K = higher pelleting efficiency|||K منخفض = كفاءة ترسيب أعلى</td><td b>Very low, typically 5–25|||منخفض جداً، عادةً 5–25</td></tr>
+    </table></div>
+    <p class="sub" b>Swinging-bucket parts: the rotor body (4 or 6 arms), the buckets, and trunnion pins that hold them. Adapters fit different tube sizes and sealed lids give biocontainment. Generally, the larger the rotor, the lower its maximum speed.|||أجزاء الدلو المتأرجح: جسم الدوّار (4 أو 6 أذرع)، الدلاء، ودبابيس المحور (trunnion pins) التي تثبتها. المحوّلات تناسب أحجام الأنابيب والأغطية المحكمة توفر احتواءً حيوياً. وعموماً كلما كبر الدوّار قلّت سرعته القصوى.</p>
+  </section>
+
+  <section class="sec" id="cen-6">
+    <h3 b>Maintenance and troubleshooting|||الصيانة وإيجاد الأعطال</h3>
+    <div class="grid2">
+      <div class="card"><h4 b>Mechanical stress|||الإجهاد الميكانيكي</h4><ul><li b>Balance the load before every run.|||وازِن الحِمل قبل كل تشغيل.</li><li b>Respect the maker's maximum speed and sample-density ratings.|||التزم بالسرعة القصوى وتصنيف كثافة العينة من الشركة المصنعة.</li><li b>Reduce speed with dense solutions, plastic adapters or stainless-steel tubes.|||خفّض السرعة مع المحاليل الكثيفة أو المحوّلات البلاستيكية أو الأنابيب الفولاذية.</li><li b>Rotors are titanium or aluminium alloy. Aluminium corrodes, and corrosion plus stress makes the rotor fail sooner and at lower stress.|||الدوّارات من سبائك التيتانيوم أو الألمنيوم. الألمنيوم يتآكل، والتآكل مع الإجهاد يجعل الدوّار يفشل أبكر وعند إجهاد أقل.</li></ul></div>
+      <div class="card"><h4 b>Safety|||السلامة</h4><ul><li b>A broken rotor can injure people nearby. Inspect for cracks regularly.|||كسر الدوّار قد يصيب من حوله. افحص الشقوق بانتظام.</li><li b>With changeable rotors, tighten the knob that holds the rotor to the motor shaft fully. If not, the rotor can break loose while spinning and badly damage the device.|||مع الدوّارات القابلة للتبديل شُدّ المقبض الذي يثبت الدوّار بعمود المحرك بالكامل. وإلا قد ينفلت الدوّار أثناء الدوران ويتلف الجهاز بشدة.</li></ul></div>
+    </div>
+    <div class="lab"><div class="lh"><span b>Fault finder: pick a symptom|||باحث الأعطال: اختر العَرَض</span><span class="tag" b>Interactive|||تفاعلي</span></div><div class="lb" id="cenFault"></div></div>
+    <div class="card"><h4 b>Preventive maintenance checklist|||قائمة الصيانة الوقائية</h4><div id="cenCheck" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div></div>
+  </section>
+
+  <section class="sec" id="cen-7">
+    <h3 b>Review|||المراجعة</h3>
+    <div class="info" b><b>Exam focus.</b> Principle (sedimentation), the six types with an example use each, the RCF formula and a worked example, the three rotor types, brushes / brake / interlock, and the list of common faults.|||<b>تركيز الامتحان.</b> المبدأ (الترسيب)، الأنواع الستة مع استخدام لكل نوع، صيغة RCF ومثال محلول، أنواع الدوّارات الثلاثة، الفرش والمكابح وقفل الغطاء، وقائمة الأعطال الشائعة.</div>
+    <h4 b>Flashcards: tap to flip|||بطاقات المراجعة: اضغط للقلب</h4><div class="grid3" id="cenCards"></div>
+    <h4 b>Quiz|||اختبار قصير</h4><div class="card q" id="cenQuiz"></div>
+  </section>
+  <div class="nextdev"><button class="btn" data-go="colorimeter" type="button"><span b>Next: Colorimeter →|||التالي: الكولوريميتر →</span></button></div>
+</article>
+<!-- ============ COLORIMETER ============ -->
+<article class="dev" id="dev-colorimeter" data-dev="colorimeter" hidden>
+  <div class="devhead">
+    <div class="kick" b>Lecture 5 · Colorimeter|||المحاضرة 5 · الكولوريميتر</div>
+    <h1 b>Colorimeter|||الكولوريميتر (مقياس اللون)</h1>
+    <p class="sub" b>Finding the concentration of a coloured solution from how much light it absorbs: design, Beer–Lambert law, calibration curve and operation.|||إيجاد تركيز محلول ملوّن من مقدار الضوء الذي يمتصه: التصميم، قانون بير–لامبرت، منحنى المعايرة، والتشغيل.</p>
+  </div>
+  <nav class="secnav" data-for="colorimeter"></nav>
+
+  <section class="sec" id="col-1">
+    <h3 b>What is a colorimeter?|||ما هو الكولوريميتر؟</h3>
+    <p b>A colorimeter measures colour, or more exactly how much light of a chosen colour a solution absorbs. It compares the light passing through the sample with the light passing through pure solvent, using a photocell. It judges colour from the red, green and blue components, much as the eye does, and works on Beer–Lambert's law: absorption is proportional to concentration.|||الكولوريميتر يقيس اللون، أي بدقة أكبر مقدار الضوء ذي اللون المختار الذي يمتصه المحلول. يقارن الضوء النافذ عبر العينة بالضوء النافذ عبر المذيب النقي باستخدام خلية ضوئية. يحكم على اللون من مركّباته الحمراء والخضراء والزرقاء كما تفعل العين، ويعتمد على قانون بير–لامبرت: الامتصاص يتناسب مع التركيز.</p>
+    <div class="grid2">
+      <div class="card"><h4 b>Types|||الأنواع</h4><ul><li b>Colour densitometer: density of primary colours.|||مقياس كثافة اللون: كثافة الألوان الأساسية.</li><li b>Colour photometer: reflection and transmission of colour.|||مقياس الضوء اللوني: انعكاس اللون ونفاذيته.</li><li b>Digital (laboratory or classroom) and portable (on-site tests such as water and soil).|||رقمي (للمختبر أو الصف) ومحمول (لفحوص الموقع مثل الماء والتربة).</li></ul></div>
+      <div class="card"><h4 b>Applications|||التطبيقات</h4><ul><li b>Growth of bacterial or yeast cultures|||نمو مزارع البكتيريا أو الخميرة</li><li b>Colour in food and drink, bird plumage, printers and copiers|||اللون في الأغذية والمشروبات وريش الطيور والطابعات والناسخات</li><li b>Water quality: chlorine, fluoride, cyanide, dissolved oxygen, iron, molybdenum, zinc, hydrazine|||جودة المياه: الكلور والفلورايد والسيانيد والأكسجين المذاب والحديد والموليبدنوم والزنك والهيدرازين</li><li b>Soil nutrients (ammonia, nitrate, phosphorus) and haemoglobin in blood|||مغذيات التربة (الأمونيا والنترات والفوسفور) وهيموغلوبين الدم</li></ul></div>
+    </div>
+    <div class="scroll"><table>
+      <tr><th></th><th b>Colorimeter|||الكولوريميتر</th><th b>Spectrophotometer|||السبكتروفوتوميتر</th></tr>
+      <tr><td b>Wavelengths|||الأطوال الموجية</td><td b>Red, green, blue (filters or LEDs)|||أحمر وأخضر وأزرق (مرشحات أو LED)</td><td b>Any wavelength of the visible range (and UV/IR)|||أي طول موجي في المرئي (وكذلك UV/IR)</td></tr>
+      <tr><td b>Build|||البناء</td><td b>Simpler and more rugged|||أبسط وأمتن</td><td b>More complicated, less rugged, needs regular recalibration|||أعقد وأقل متانة ويحتاج معايرة دورية</td></tr>
+      <tr><td b>Shared basis|||الأساس المشترك</td><td colspan="2" b>Both use Beer–Lambert's law to get concentration, in different ways.|||كلاهما يستخدم قانون بير–لامبرت لإيجاد التركيز بطرق مختلفة.</td></tr>
+    </table></div>
+  </section>
+
+  <section class="sec" id="col-2">
+    <h3 b>Design|||التصميم</h3>
+    <p b>Three main parts: a light source, a cuvette with the sample, and a photocell that detects the light that gets through. Coloured filters or specific LEDs set the colour. The output shows transmittance or absorbance on an analogue or digital meter. A voltage regulator may protect the instrument from mains fluctuations.|||ثلاثة أجزاء رئيسية: مصدر ضوء، وكيوفيت (cuvette) يحتوي العينة، وخلية ضوئية تكشف الضوء النافذ. مرشحات ملوّنة أو مصابيح LED محددة تعطي اللون. يعرض الخرج النفاذية أو الامتصاصية على مقياس تماثلي أو رقمي. وقد يوجد منظّم جهد يحمي الجهاز من تقلبات الشبكة.</p>
+    <div class="lab"><div class="lh"><span b>Light path: tap a part|||مسار الضوء: اضغط على جزء</span><span class="tag" b>Interactive|||تفاعلي</span></div><div class="lb" id="colChain"></div></div>
+    <p class="sub" b>The double-cuvette version in the lecture has a reference cuvette and a sample cuvette, each with its own photodetector, feeding a DC op-amp whose output drives the meter. That is why the calibration steps below use two cuvettes.|||النسخة ذات الكيوفيتين في المحاضرة فيها كيوفيت مرجعي وكيوفيت للعينة ولكل منهما كاشف ضوئي، ويغذيان مضخماً عملياتياً DC يقود المقياس. لذلك تستخدم خطوات المعايرة أدناه كيوفيتين.</p>
+  </section>
+
+  <section class="sec" id="col-3">
+    <h3 b>Working principle|||مبدأ العمل|||</h3>
+    <p b>A beam of one colour passes through the solution. More concentrated solution absorbs more light. To find an unknown, you first measure several solutions of known concentration and plot absorbance against concentration (the calibration curve), then read the unknown from the curve.|||يمر شعاع ضوء بلون واحد عبر المحلول. المحلول الأكثر تركيزاً يمتص ضوءاً أكثر. لإيجاد تركيز مجهول تقيس أولاً عدة محاليل معلومة التركيز وترسم الامتصاصية مقابل التركيز (منحنى المعايرة) ثم تقرأ المجهول من المنحنى.</p>
+    <div class="lab"><div class="lh"><span b>Beer–Lambert simulator|||محاكي بير–لامبرت</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb">
+        <div class="grid2"><div><div class="sublabel" b>Solution|||المحلول</div><div class="pills" id="bsSol"></div></div><div><div class="sublabel" b>Filter (wavelength band)|||المرشح (نطاق الطول الموجي)</div><div class="pills" id="bsFil"></div></div></div>
+        <div class="lightrow"><div class="beam" id="bsIn"></div><div class="cuv"><i id="bsCuv"></i></div><div class="beam" id="bsOut"></div></div>
+        <div class="grid2">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="ctl"><label for="bsC" b>Concentration c (relative)|||التركيز c (نسبي)</label><input type="range" id="bsC" min="0" max="2.5" step="0.05" value="0.8"><output id="bsCo"></output></div>
+            <div class="ctl"><label for="bsB" b>Path length b (cm)|||طول المسار b (cm)</label><input type="range" id="bsB" min="0.5" max="2" step="0.5" value="1"><output id="bsBo"></output></div>
+          </div>
+          <div class="out" id="bsOutp"></div>
+        </div>
+        <div class="detail" id="bsMsg"></div>
+        <p class="sub" b>Model values chosen for illustration. Note how the filter matters: the sample reads highest in the band it absorbs most (λ max).|||قيم النموذج مختارة للتوضيح. لاحظ أهمية المرشح: تعطي العينة أعلى قراءة في النطاق الذي تمتصه أكثر (λ max).</p>
+      </div></div>
+    <div class="lab"><div class="lh"><span b>Calibration curve: read an unknown|||منحنى المعايرة: اقرأ مجهولاً</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb"><div class="grid2"><div id="calSvg"></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <p class="sub" b>Standards (dots) were measured with the best filter for the red solution. Move the unknown's absorbance, or press "New unknown" and read it from the line.|||المعايير (النقاط) قيست بأفضل مرشح للمحلول الأحمر. حرّك امتصاصية المجهول أو اضغط «مجهول جديد» واقرأه من الخط.</p>
+          <div class="ctl"><label for="calA" b>Unknown absorbance|||امتصاصية المجهول</label><input type="range" id="calA" min="0" max="1.6" step="0.01" value="0.5"><output id="calAo"></output></div>
+          <div class="out" id="calOut"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="calNew" type="button"><span b>New unknown|||مجهول جديد</span></button><button class="btn ghost" id="calRev" type="button"><span b>Reveal true value|||اكشف القيمة الحقيقية</span></button></div>
+          <div id="calTrue" class="detail" hidden></div>
+        </div></div></div></div>
+  </section>
+
+  <section class="sec" id="col-4">
+    <h3 b>How to use it|||طريقة الاستخدام</h3>
+    <p b>You watch a colour change as a reaction proceeds (clear to coloured, or the reverse). The wavelength most affected is λ max, the maximum absorption. Wavelengths can be selected by laser, LED or prism, but a cheap way is an optical filter. Always use the same machine for a set of measurements.|||تراقب تغيّر اللون أثناء التفاعل (من شفاف إلى ملوّن أو العكس). الطول الموجي الأكثر تأثراً هو λ max أي أقصى امتصاص. يمكن اختيار الطول الموجي بالليزر أو LED أو المنشور، لكن الطريقة الرخيصة هي المرشح الضوئي. استخدم دائماً الجهاز نفسه لمجموعة القياسات.</p>
+    <div class="grid3">
+      <div class="card"><h4 style="color:#d33">Red|||أحمر</h4><span class="mono">630–750 nm</span></div>
+      <div class="card"><h4 style="color:#2a9d4a">Green|||أخضر</h4><span class="mono">510–570 nm</span></div>
+      <div class="card"><h4 style="color:#3b6fd4">Blue|||أزرق</h4><span class="mono">360–480 nm</span></div>
+    </div>
+    <div class="lab"><div class="lh"><span b>Put the operating steps in order|||رتّب خطوات التشغيل</span><span class="tag" b>Interactive|||تفاعلي</span></div><div class="lb" id="colOrder1"></div></div>
+    <div class="info" b>Over range: if absorbance is above about 2.0, dilute the sample. Recheck the blank at intervals to catch drift in the zero.|||خارج المدى: إذا زادت الامتصاصية عن نحو 2.0 خفّف العينة. أعد فحص المحلول الصفري (blank) من وقت لآخر لاكتشاف انحراف الصفر.</div>
+  </section>
+
+  <section class="sec" id="col-5">
+    <h3 b>Calibration and maintenance|||المعايرة والصيانة</h3>
+    <div class="lab"><div class="lh"><span b>Put the calibration steps in order|||رتّب خطوات المعايرة</span><span class="tag" b>Interactive|||تفاعلي</span></div><div class="lb" id="colOrder2"></div></div>
+    <p b>Maintenance covers calibration adjustment of the lamp and photodetectors. Rotating mechanical parts (mirrors, diffraction gratings) sometimes fail. The electronics are very reliable.|||تشمل الصيانة ضبط معايرة المصباح والكواشف الضوئية. الأجزاء الميكانيكية الدوّارة (المرايا ومحازيز الحيود) قد تتعطل أحياناً. أما الإلكترونيات فموثوقة جداً.</p>
+  </section>
+
+  <section class="sec" id="col-6">
+    <h3 b>Review|||المراجعة</h3>
+    <div class="info" b><b>Exam focus.</b> Definition and principle, three main parts, filter wavelength ranges, steps of use and of calibration, difference from the spectrophotometer, and the applications list.|||<b>تركيز الامتحان.</b> التعريف والمبدأ، الأجزاء الرئيسية الثلاثة، نطاقات المرشحات، خطوات الاستخدام والمعايرة، الفرق عن السبكتروفوتوميتر، وقائمة التطبيقات.</div>
+    <h4 b>Flashcards: tap to flip|||بطاقات المراجعة: اضغط للقلب</h4><div class="grid3" id="colCards"></div>
+    <h4 b>Quiz|||اختبار قصير</h4><div class="card q" id="colQuiz"></div>
+  </section>
+  <div class="nextdev"><button class="btn" data-go="spectrophotometer" type="button"><span b>Next: Spectrophotometer →|||التالي: السبكتروفوتوميتر →</span></button></div>
+</article>
+
+<!-- ============ SPECTROPHOTOMETER ============ -->
+<article class="dev" id="dev-spectrophotometer" data-dev="spectrophotometer" hidden>
+  <div class="devhead">
+    <div class="kick" b>Lecture 6 · Spectrophotometer|||المحاضرة 6 · السبكتروفوتوميتر</div>
+    <h1 b>Spectrophotometer|||السبكتروفوتوميتر (مقياس الطيف الضوئي)</h1>
+    <p class="sub" b>Measuring absorption at any chosen wavelength: the spectrum, single and double beam, the absorbance equations, and each part of the instrument.|||قياس الامتصاص عند أي طول موجي مختار: الطيف، الشعاع المفرد والمزدوج، معادلات الامتصاصية، وكل جزء من الجهاز.</p>
+  </div>
+  <nav class="secnav" data-for="spectrophotometer"></nav>
+
+  <section class="sec" id="spe-1">
+    <h3 b>Spectrophotometry|||قياس الطيف الضوئي</h3>
+    <p b>It is the most important instrumental method in clinical chemistry. It uses the absorption of visible, ultraviolet and infrared radiation. Atoms and molecules have fixed energy states, so a change between states needs a definite amount of energy, supplied by photons of one particular frequency that are selectively absorbed. Which photons are absorbed tells you what the substance is (qualitative). How many are absorbed tells you how much is there (quantitative).|||هي أهم الطرق الآلية في الكيمياء السريرية. تعتمد على امتصاص الأشعة المرئية وفوق البنفسجية وتحت الحمراء. للذرات والجزيئات حالات طاقة محددة، فالانتقال بين حالتين يحتاج كمية طاقة محددة تقدمها فوتونات ذات تردد معين فتُمتص انتقائياً. أي الفوتونات تُمتص يخبرك ما هي المادة (نوعي)، وكم يُمتص يخبرك بكميتها (كمّي).</p>
+    <p b>Molecules hold three kinds of internal energy: electronic (UV and visible), vibrational (near and mid infrared) and rotational (infrared and far infrared). Visible light covers 380 to 780 nm. The UV region starts at 185 nm; shorter wavelengths (far UV) overlap soft X-rays. Infrared lies above the visible. Measuring takes seconds; most of the time goes into preparing the sample.|||للجزيئات ثلاثة أنواع من الطاقة الداخلية: إلكترونية (UV والمرئي)، اهتزازية (تحت الحمراء القريبة والمتوسطة)، ودورانية (تحت الحمراء وتحت الحمراء البعيدة). المرئي يغطي من 380 إلى 780 nm. منطقة UV تبدأ من 185 nm والأقصر منها (UV البعيد) تتداخل مع الأشعة السينية الناعمة. وتحت الحمراء فوق المرئي. القياس يستغرق ثواني ومعظم الوقت يذهب في تحضير العينة.</p>
+    <div class="lab"><div class="lh"><span b>Spectrum explorer: slide the wavelength|||مستكشف الطيف: حرّك الطول الموجي</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb"><div class="ctl"><label for="spW" b>Wavelength λ|||الطول الموجي λ</label><input type="range" id="spW" min="150" max="1100" step="5" value="550"><output id="spWo"></output></div>
+        <div id="spBar" style="height:26px;border-radius:6px;border:1px solid var(--line)"></div>
+        <div class="out" id="spOut"></div></div></div>
+  </section>
+
+  <section class="sec" id="spe-2">
+    <h3 b>Radiation meets matter|||تفاعل الإشعاع مع المادة|||</h3>
+    <p b>A beam striking a substance can be transmitted, absorbed, scattered, reflected, or can excite fluorescence. No permanent energy transfer is involved, and the beam travels slower than in vacuum. In absorption spectrophotometry we care about absorption and transmission, so the sample is set up to keep reflection and scattering low.|||الشعاع الساقط على مادة قد ينفذ أو يُمتص أو يتشتت أو ينعكس أو يثير الفلورة. لا يحدث انتقال دائم للطاقة وتقل سرعة الشعاع عن سرعته في الفراغ. في قياس الامتصاص نهتم بالامتصاص والنفاذ، لذلك تُهيّأ العينة بحيث يقل الانعكاس والتشتت.</p>
+    <div class="lab"><div class="lh"><span b>Where does the light go?|||أين يذهب الضوء؟</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb"><div class="grid2"><div style="display:flex;flex-direction:column;gap:10px">
+        <div class="ctl"><label for="ebA" b>Absorbed (%)|||الممتص (%)</label><input type="range" id="ebA" min="0" max="100" value="40"><output id="ebAo"></output></div>
+        <div class="ctl"><label for="ebR" b>Reflected (%)|||المنعكس (%)</label><input type="range" id="ebR" min="0" max="100" value="5"><output id="ebRo"></output></div>
+        <div class="ctl"><label for="ebS" b>Scattered (%)|||المتشتت (%)</label><input type="range" id="ebS" min="0" max="100" value="5"><output id="ebSo"></output></div></div>
+        <div id="ebBar"></div></div></div></div>
+  </section>
+
+  <section class="sec" id="spe-3">
+    <h3 b>Single beam and double beam|||الشعاع المفرد والمزدوج</h3>
+    <ul><li b>Single beam: measures the beam intensity before and after the sample is put in. Large dynamic range, simple, compact.|||الشعاع المفرد: يقيس شدة الشعاع قبل وضع العينة وبعده. مدى ديناميكي واسع، بسيط، صغير الحجم.</li><li b>Double beam: compares two paths at once, one with the reference and one with the test sample. Easier and more stable for comparison measurements.|||الشعاع المزدوج: يقارن مسارين في آن واحد، أحدهما فيه المرجع والآخر العينة. أسهل وأكثر ثباتاً في قياسات المقارنة.</li></ul>
+    <div class="lab"><div class="lh"><span b>Light path|||مسار الضوء</span><span class="tag" b>Interactive|||تفاعلي</span></div><div class="lb"><div class="pills" id="beamPills"></div><div id="beamSvg"></div><div class="detail" id="beamDetail"></div></div></div>
+  </section>
+
+  <section class="sec" id="spe-4">
+    <h3 b>Working principle: the equations|||مبدأ العمل: المعادلات</h3>
+    <p b>The amount of absorption depends on the number of absorbing molecules in the path, so the light that leaves the sample tells you the concentration. I₀ is the incident energy and I the transmitted energy.|||مقدار الامتصاص يعتمد على عدد الجزيئات الماصّة في المسار، لذلك فالضوء الخارج من العينة يدل على التركيز. I₀ الطاقة الساقطة وI الطاقة النافذة.</p>
+    <div class="formula">T = I / I₀        %T = (I / I₀) × 100<br>A = log₁₀(1/T) = log₁₀(I₀ / I)        OD = log₁₀(100 / %T)<br>I = I₀ × 10^(−ε·b·c)        A = ε · b · c</div>
+    <p b>ε is the extinction coefficient, b the path length, c the concentration. For one determination ε and b are nearly constant, so absorbance plotted against concentration is a straight line. Transmittance is not, unless it is plotted on the log axis of semi-log paper.|||ε معامل الانطفاء (extinction coefficient) وb طول المسار وc التركيز. في القياس الواحد يكون ε وb ثابتين تقريباً، لذلك فرسم الامتصاصية مقابل التركيز خط مستقيم. أما النفاذية فلا، إلا إذا رُسمت على المحور اللوغاريتمي في ورق شبه لوغاريتمي.</p>
+    <div class="lab"><div class="lh"><span b>%T ⇄ absorbance converter|||محوّل %T ⇄ الامتصاصية</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb"><div class="grid2"><div style="display:flex;flex-direction:column;gap:10px">
+        <div class="ctl"><label for="cvT">%T</label><input type="range" id="cvT" min="1" max="100" step="1" value="50"><output id="cvTo"></output></div>
+        <div class="ctl"><label for="cvC" b>c (ε·b = 1)|||c (حيث ε·b = 1)</label><input type="range" id="cvC" min="0" max="2" step="0.01" value="0.3"><output id="cvCo"></output></div>
+        <div class="out" id="cvOut"></div></div>
+        <div id="cvSvg"></div></div></div></div>
+    <div class="info" b><b>Quick values.</b> 100 %T → A = 0; 50 %T → A = 0.301; 10 %T → A = 1; 1 %T → A = 2.|||<b>قيم سريعة.</b> 100 %T ← A = 0؛ 50 %T ← A = 0.301؛ 10 %T ← A = 1؛ 1 %T ← A = 2.</div>
+  </section>
+
+  <section class="sec" id="spe-5">
+    <h3 b>How to use it|||طريقة الاستخدام</h3>
+    <div class="lab"><div class="lh"><span b>Put the steps in order|||رتّب الخطوات</span><span class="tag" b>Interactive|||تفاعلي</span></div><div class="lb" id="speOrder"></div></div>
+    <p class="sub" b>Fingerprints and dirt on a cuvette change the result, so wear gloves. Change the blank every time you change the wavelength.|||بصمات الأصابع والأوساخ على الكيوفيت تغيّر النتيجة لذلك ارتدِ قفازات. غيّر المحلول الصفري كلما غيّرت الطول الموجي.</p>
+  </section>
+
+  <section class="sec" id="spe-6">
+    <h3 b>The six parts|||الأجزاء الستة</h3>
+    <p b>The lecture lists: a radiant-energy source, a way to select a narrow band, an optical system that makes a parallel beam, a sample cell, a detector, and a readout (meter or numerical display). Tap each part for details.|||تذكر المحاضرة: مصدر طاقة إشعاعية، وطريقة لاختيار نطاق ضيق، ونظام بصري يعطي شعاعاً متوازياً، وخلية للعينة، وكاشف، ونظام قراءة (مقياس أو شاشة رقمية). اضغط على كل جزء للتفاصيل.</p>
+    <div class="lab"><div class="lh"><span b>Parts explorer|||مستكشف الأجزاء</span><span class="tag" b>Interactive|||تفاعلي</span></div><div class="lb" id="speParts"></div></div>
+    <div class="lab"><div class="lh"><span b>Monochromator: choose the slit|||أحادي اللون: اختر الشق</span><span class="tag" b>Interactive|||تفاعلي</span></div>
+      <div class="lb"><div id="monoBar" style="height:34px;border-radius:6px;position:relative;border:1px solid var(--line)"><div id="monoSlit" style="position:absolute;top:-4px;bottom:-4px;border:2px solid var(--fg);border-radius:3px;background:rgba(255,255,255,.15)"></div></div>
+        <div class="grid2"><div style="display:flex;flex-direction:column;gap:10px"><div class="ctl"><label for="moL" b>Slit position λ|||موضع الشق λ</label><input type="range" id="moL" min="380" max="780" value="520"><output id="moLo"></output></div><div class="ctl"><label for="moW" b>Bandwidth|||عرض النطاق</label><input type="range" id="moW" min="2" max="80" value="20"><output id="moWo"></output></div></div>
+        <div style="display:flex;gap:12px;align-items:center"><div id="monoOut" style="width:80px;height:60px;border-radius:8px;border:1px solid var(--line);flex:none"></div><p class="sub" b>A prism or diffraction grating spreads white light by wavelength and the slit lets only the band of interest through. Narrower slit = purer light, less energy.|||المنشور أو محزوز الحيود ينشر الضوء الأبيض حسب الطول الموجي ويسمح الشق بمرور النطاق المطلوب فقط. شق أضيق = ضوء أنقى وطاقة أقل.</p></div></div></div></div>
+  </section>
+
+  <section class="sec" id="spe-7">
+    <h3 b>Review|||المراجعة</h3>
+    <div class="info" b><b>Exam focus.</b> The equations (T, %T, A, OD, Beer–Lambert), single versus double beam, the six parts with the lamp for each region (tungsten-halogen for visible and near IR, deuterium for UV), filter versus monochromator, and the steps of use.|||<b>تركيز الامتحان.</b> المعادلات (T و %T وA وOD وبير–لامبرت)، الشعاع المفرد مقابل المزدوج، الأجزاء الستة والمصباح المناسب لكل منطقة (تنغستن–هالوجين للمرئي وتحت الحمراء القريبة، ديوتيريوم للـ UV)، المرشح مقابل أحادي اللون، وخطوات الاستخدام.</div>
+    <h4 b>Flashcards: tap to flip|||بطاقات المراجعة: اضغط للقلب</h4><div class="grid3" id="speCards"></div>
+    <h4 b>Quiz|||اختبار قصير</h4><div class="card q" id="speQuiz"></div>
+  </section>
+  <div class="nextdev"><button class="btn ghost" data-go="start" type="button"><span b>Back to start|||العودة إلى البداية</span></button></div>
+</article>
+
+</main>
+</div>
+<script>
+(function(){
+"use strict";
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const store={get(k,d){try{const v=localStorage.getItem('lab:'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('lab:'+k,JSON.stringify(v))}catch(e){}}};
+const bi=(e,a)=>'<span class="en">'+e+'</span><span class="ar" lang="ar" dir="rtl">'+a+'</span>';
+const bt=p=>bi(p[0],p[1]);
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+const fmt=(x,d=2)=>Number(x).toFixed(d);
+function initBi(root){$$('[b]',root).forEach(el=>{if(el.dataset.bd)return;const p=el.innerHTML.split('|||');if(p.length<2)return;el.innerHTML=bi(p[0].trim(),p[1].trim());el.dataset.bd='1'})}
+initBi(document);
+const app=$('#app');
+const DEVS=[['start',['Start','البداية'],null,'--spe'],['ecg',['ECG','ECG'],'2','--ecg'],['centrifuge',['Centrifuge','الطرد المركزي'],'4','--cen'],['colorimeter',['Colorimeter','الكولوريميتر'],'5','--col'],['spectrophotometer',['Spectrophotometer','السبكتروفوتوميتر'],'6','--spe']];
+let done=store.get('done',{}), quiz=store.get('quiz',{});
+function devSecs(d){return $$('#dev-'+d+' .sec')}
+function progress(d){const s=devSecs(d);if(!s.length)return 0;return s.filter(x=>done[x.id]).length/s.length}
+// language
+function setLang(l){app.classList.remove('lang-en','lang-ar','lang-both');app.classList.add('lang-'+l);app.dir=l==='ar'?'rtl':'ltr';$$('.seg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===l)));store.set('lang',l)}
+$$('.seg button').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
+setLang(store.get('lang','both'));
+// tabs
+const tabs=$('#tabs');
+DEVS.forEach(d=>{const b=document.createElement('button');b.className='tab';b.type='button';b.dataset.dev=d[0];b.style.setProperty('--tabc','var('+d[3]+')');b.innerHTML='<span>'+bt(d[1])+'</span>'+(d[2]?'<small class="mono">L'+d[2]+'</small>':'')+'<span class="bar"><i></i></span>';b.addEventListener('click',()=>go(d[0]));tabs.appendChild(b)});
+function refresh(){$$('.tab',tabs).forEach(t=>{const p=progress(t.dataset.dev);const i=$('.bar i',t);if(i)i.style.width=Math.round(p*100)+'%'});
+ $$('.dcard').forEach(c=>{$('.pg i',c).style.width=Math.round(progress(c.dataset.dev)*100)+'%';const q=quiz[c.dataset.dev];$('.qs',c).textContent=q?('Quiz '+q.s+'/'+q.n):'Quiz –'});
+ $$('.secnav .chip').forEach(c=>c.classList.toggle('done',!!done[c.dataset.id]));
+ $$('.donebtn').forEach(b=>b.setAttribute('aria-pressed',String(!!done[b.dataset.id])))}
+function go(d){if(!DEVS.some(x=>x[0]===d))d='start';$$('.dev').forEach(a=>a.hidden=a.dataset.dev!==d);app.dataset.dev=d;$$('.tab',tabs).forEach(t=>t.setAttribute('aria-current',t.dataset.dev===d?'page':'false'));if(location.hash.slice(1)!==d)location.hash=d;window.scrollTo(0,0);if(window.__onShow)window.__onShow(d)}
+window.addEventListener('hashchange',()=>go(location.hash.slice(1)));
+$$('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+// device cards
+$('#devcards').innerHTML=DEVS.slice(1).map(d=>'<button class="dcard" type="button" data-dev="'+d[0]+'" style="--c:var('+d[3]+')"><span class="k">Lecture '+d[2]+'</span><h2 style="font-size:1.2rem">'+bt(d[1])+'</h2><span class="pg"><i></i></span><small class="mono qs"></small></button>').join('');
+$$('.dcard').forEach(c=>c.addEventListener('click',()=>go(c.dataset.dev)));
+// sections: numbers, nav, done button
+$$('.dev').forEach(a=>{const nav=$('.secnav',a);if(!nav)return;$$('.sec',a).forEach((s,i)=>{const h=$('h3',s);const n=i+1;const html=h.innerHTML;h.innerHTML='<span class="num">'+String(n).padStart(2,'0')+'</span><span>'+html+'</span>';
+ const c=document.createElement('button');c.className='chip';c.type='button';c.dataset.id=s.id;c.innerHTML='<span class="n">'+String(n).padStart(2,'0')+'</span><span>'+html+'</span>';c.addEventListener('click',()=>s.scrollIntoView({behavior:'smooth',block:'start'}));nav.appendChild(c);
+ const d=document.createElement('div');d.className='donebar';d.innerHTML='<button class="donebtn" type="button" data-id="'+s.id+'" aria-pressed="false">'+bi('Mark as studied','تمت دراسته')+'</button>';s.appendChild(d);
+ $('.donebtn',d).addEventListener('click',e=>{done[s.id]=!done[s.id];store.set('done',done);refresh()})})});
+// generic helpers
+function chain(id,main,support,arrows){const el=$('#'+id);let sel=null;
+ const mk=(n,i)=>'<button class="node" type="button" data-k="'+n.k+'" aria-pressed="false">'+bt(n.t)+'</button>';
+ let h='<div class="chain">'+main.map((n,i)=>(i&&arrows?'<span class="arrow">→</span>':'')+mk(n)).join('')+'</div>';
+ if(support&&support.length)h+='<div class="sublabel">'+bi('Supporting blocks','كتل مساندة')+'</div><div class="chain">'+support.map(mk).join('')+'</div>';
+ h+='<div class="detail" aria-live="polite"></div>';el.innerHTML=h;const all=main.concat(support||[]);const det=$('.detail',el);
+ function pick(k){const n=all.find(x=>x.k===k);$$('.node',el).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));det.innerHTML='<h4>'+bt(n.t)+'</h4><p>'+bt(n.d)+'</p>'}
+ $$('.node',el).forEach(b=>b.addEventListener('click',()=>pick(b.dataset.k)));pick(all[0].k)}
+function cards(id,terms){$('#'+id).innerHTML=terms.map(t=>'<button class="fc" type="button" aria-pressed="false"><span class="t">'+bi(t[0],t[1])+'</span><span class="d" hidden>'+bi(t[2],t[3])+'</span><span class="hint">tap ↻</span></button>').join('');
+ $$('#'+id+' .fc').forEach(b=>b.addEventListener('click',()=>{const o=b.getAttribute('aria-pressed')==='true';b.setAttribute('aria-pressed',String(!o));$('.d',b).hidden=o}))}
+function runQuiz(id,key,qs){const el=$('#'+id);let i=0,sc=0;
+ function draw(){if(i>=qs.length){const prev=quiz[key];if(!prev||sc>=prev.s){quiz[key]={s:sc,n:qs.length};store.set('quiz',quiz)}refresh();el.innerHTML='<div class="score">'+sc+' / '+qs.length+'</div><p>'+(sc===qs.length?bi('Perfect. Move on to the next lecture.','ممتاز. انتقل إلى المحاضرة التالية.'):bi('Review the sections you missed and try again.','راجع الأقسام التي أخطأت فيها وحاول مرة أخرى.'))+'</p><button class="btn" type="button" id="'+id+'R">'+bi('Try again','أعد المحاولة')+'</button>';$('#'+id+'R').addEventListener('click',()=>{i=0;sc=0;draw()});return}
+ const q=qs[i];const idx=q.o.map((_,k)=>k).sort(()=>Math.random()-.5);
+ el.innerHTML='<div class="qh"><span>'+bi('Question','سؤال')+' '+(i+1)+'/'+qs.length+'</span><span>'+sc+'</span></div><p style="margin:8px 0"><b>'+bt(q.q)+'</b></p><div class="opts">'+idx.map(k=>'<button class="opt" type="button" data-k="'+k+'">'+bt(q.o[k])+'</button>').join('')+'</div><div class="why" hidden></div><div style="margin-top:10px"><button class="btn" type="button" hidden>'+bi('Next','التالي')+'</button></div>';
+ $$('.opt',el).forEach(b=>b.addEventListener('click',()=>{const k=+b.dataset.k;if(k===q.a)sc++;$$('.opt',el).forEach(o=>{o.disabled=true;if(+o.dataset.k===q.a)o.classList.add('right');else if(o===b)o.classList.add('wrong')});const w=$('.why',el);w.hidden=false;w.innerHTML=(k===q.a?bi('Correct. ','صحيح. '):bi('Not quite. ','ليس تماماً. '))+bt(q.w);const n=$('.btn',el);n.hidden=false;n.addEventListener('click',()=>{i++;draw()})}))}
+ draw()}
+function order(id,steps){const el=$('#'+id);let pick=[];const sh=steps.map((s,i)=>i).sort(()=>Math.random()-.5);
+ function draw(chk){el.innerHTML='<div class="sublabel">'+bi('Your order','ترتيبك')+'</div><div class="ordlist">'+(pick.length?pick.map((k,j)=>'<div class="ordrow'+(chk?(k===j?' right':' wrong'):'')+'"><span class="i">'+(j+1)+'</span><span>'+bt(steps[k])+'</span></div>').join(''):'<div class="empty">'+bi('Tap the steps below, first step first.','اضغط على الخطوات بالأسفل، الخطوة الأولى أولاً.')+'</div>')+'</div><div class="sublabel">'+bi('Steps','الخطوات')+'</div><div class="ordlist">'+sh.filter(k=>!pick.includes(k)).map(k=>'<button class="opt" type="button" data-k="'+k+'">'+bt(steps[k])+'</button>').join('')+'</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" data-a="chk"'+(pick.length<steps.length?' disabled':'')+'>'+bi('Check','تحقق')+'</button><button class="btn ghost" type="button" data-a="rst">'+bi('Reset','إعادة')+'</button></div>'+(chk?'<div class="why">'+(pick.every((k,j)=>k===j)?bi('Correct order.','الترتيب صحيح.'):bi('Green rows are in the right place; red ones are not. Press Reset to retry.','الصفوف الخضراء في مكانها الصحيح والحمراء لا. اضغط إعادة للمحاولة.'))+'</div>':'');
+ $$('.opt',el).forEach(b=>b.addEventListener('click',()=>{pick.push(+b.dataset.k);draw()}));$('[data-a=chk]',el).addEventListener('click',()=>{if(pick.length===steps.length)draw(true)});$('[data-a=rst]',el).addEventListener('click',()=>{pick=[];draw()})}
+ draw()}
+function ctl(ids,fn){ids.forEach(i=>{const e=$('#'+i);if(e)e.addEventListener('input',fn)});fn()}
+function out(id,items){$('#'+id).innerHTML=items.map(x=>'<div class="stat'+(x[3]?' '+x[3]:'')+'"><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>').join('')}
+const val=(id)=>+$('#'+id).value, setO=(id,t)=>{$('#'+id).textContent=t};
+window.L={$,$$,bi,bt,clamp,fmt,chain,cards,runQuiz,order,ctl,out,val,setO,go,refresh,store};
+window.__after=[];
+})();
+</script>
+<script>
+(function(){
+"use strict";
+const {$,$$,bi,bt,clamp,fmt,chain,cards,runQuiz,ctl,out,val,setO}=window.L;
+// ---- specs
+const specs=[
+['Signal level','مستوى الإشارة','Millivolts. The heart field is a vector, but we measure a scalar: the voltage difference between two points on the body.','بالميلي فولت. مجال القلب كمية متجهة لكننا نقيس كمية قياسية: فرق الجهد بين نقطتين على الجسم.'],
+['Bandwidth 0.05–150 Hz','عرض النطاق 0.05–150 Hz','The amplifier and writer must reproduce this range faithfully. Good low-frequency response keeps the baseline stable. The high-frequency limit is a compromise: separating the ECG from muscle (myographic) potentials, and the mass, inertia and friction of pen recorders.','يجب أن يعيد المضخم والكاتب هذا النطاق بأمانة. الاستجابة الجيدة للترددات المنخفضة تثبّت خط الأساس. وحد الترددات العالية حل وسط بين فصل ECG عن جهود العضلات (myographic) وبين كتلة القلم وقصوره الذاتي واحتكاكه.'],
+['CMRR 100–120 dB','CMRR ‏100–120 dB','Differential amplifiers reject non-biological interference. A CMRR of 100–120 dB with 5 kΩ unbalance in the leads is desirable.','المضخمات التفاضلية ترفض التداخل غير الحيوي. يُرغب بـ CMRR بين 100 و120 dB مع عدم اتزان 5 kΩ في الأقطاب.'],
+['50 Hz notch filter','مرشح 50 Hz الحاد','In especially adverse conditions a notch filter tuned to 50 Hz rejects hum from the power mains.','في الظروف السيئة جداً يرفض مرشح ملتقط (notch) مضبوط على 50 Hz طنين الشبكة الكهربائية.'],
+['Baseline stabilizer','مثبّت خط الأساس','Changes in electrode contact impedance make the baseline drift, so an automatic baseline stabilizing circuit is needed.','تغيّر معاوقة تماس القطب يجعل خط الأساس ينحرف، لذلك يلزم دائرة تثبيت تلقائي لخط الأساس.'],
+['Paper speeds 25 and 50 mm/s','سرعتا الورق 25 و50 mm/s','At least two paper speeds are needed. 25 mm/s is routine.','يلزم سرعتان على الأقل للورق. والسرعة 25 mm/s هي الروتينية.']];
+(function(){const p=$('#specPills'),d=$('#specDetail');p.innerHTML=specs.map((s,i)=>'<button class="pill" type="button" data-i="'+i+'" aria-pressed="false">'+bi(s[0],s[1])+'</button>').join('');
+ function pick(i){$$('.pill',p).forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.i===i)));const s=specs[i];d.innerHTML='<h4>'+bi(s[0],s[1])+'</h4><p>'+bi(s[2],s[3])+'</p>'}
+ $$('.pill',p).forEach(b=>b.addEventListener('click',()=>pick(+b.dataset.i)));pick(0)})();
+// ---- waveform
+const G=(t,m,s,a)=>a*Math.exp(-((t-m)*(t-m))/(2*s*s));
+function beat(t){return G(t,55,20,.15)+G(t,158,6,-.12)+G(t,180,8,1.2)+G(t,226,8,-.25)+G(t,445,45,.32)+G(t,660,25,.05)}
+const X=t=>20+0.3*t, Y=v=>170-120*v;
+function ecgBase(T){let pts=[];for(let t=0;t<=T;t+=3){pts.push((t?'L':'M')+X(t).toFixed(1)+' '+Y(beat(t%800)).toFixed(1))}
+ return '<svg class="ecgsvg ltr" viewBox="0 0 620 240" role="img" aria-label="ECG trace on paper grid"><defs><pattern id="g1" x="20" y="-10" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M12 0V12M0 12H12" fill="none" stroke="var(--grid)" stroke-width=".5"/></pattern><pattern id="g5" x="20" y="-10" width="60" height="60" patternUnits="userSpaceOnUse"><path d="M60 0V60M0 60H60" fill="none" stroke="var(--grid2)" stroke-width=".9"/></pattern></defs><rect x="0" y="0" width="620" height="240" fill="url(#g1)"/><rect x="0" y="0" width="620" height="240" fill="url(#g5)"/><g id="ov"></g><path class="tracepath" d="'+pts.join('')+'"/><g id="lbl"></g><text x="8" y="232" font-size="9" style="fill:var(--muted)">25 mm/s · 10 mm/mV · 1 mm = 40 ms = 0.1 mV</text></svg>'}
+// wave explorer
+const REG={P:[10,100,'P wave','موجة P','Atrial depolarization. It continues through the PQ segment. Atrial repolarization (Ta wave) is hidden inside the QRS complex.','زوال الاستقطاب الأذيني. يستمر خلال المقطع PQ. أما عودة الاستقطاب الأذيني (موجة Ta) فتختبئ داخل المعقد QRS.'],
+PR:[100,150,'PR (PQ) segment','المقطع PR (PQ)','The delay between atrial and ventricular activation: the atrioventricular conduction time, when the impulse is held at the AV node.','التأخير بين تنشيط الأذينين والبطينين: زمن التوصيل الأذيني البطيني حيث يُحتجز الدفعة عند العقدة AV.'],
+QRS:[150,250,'QRS complex','المعقد QRS','Usually the largest deflection. Q = septum activation; R = completion of septum and apex activation; S = ventricular free walls and the base. The three waves are not always visible and can merge. Typical normal width is under about 0.12 s (general reference).','عادةً أكبر انحراف. Q = تنشيط الحاجز بين البطينين؛ R = إكمال تنشيط الحاجز وتنشيط القمة؛ S = الجدران الحرة للبطينين والقاعدة. لا تظهر الموجات الثلاث دائماً وقد تندمج. العرض الطبيعي المعتاد أقل من نحو 0.12 s (مرجع عام).'],
+ST:[250,355,'ST segment','المقطع ST','A flat (isoelectric) period lasting a few hundred ms while all ventricular cells sit in the plateau of the action potential. It starts at the J point (end of QRS) and ends where the T wave begins.','فترة مسطّحة (isoelectric) تدوم بضع مئات من ms بينما تكون كل الخلايا البطينية في هضبة جهد الفعل. تبدأ من النقطة J (نهاية QRS) وتنتهي عند بداية موجة T.'],
+T:[355,545,'T wave','موجة T','Ventricular repolarization. Its start matches the end of the plateau of epicardial cells, the peak matches full epicardial repolarization, and the end matches repolarization of the mid-wall M-cells.','عودة الاستقطاب البطيني. بدايتها توافق نهاية هضبة الخلايا الخارجية (epicardial)، وقمتها توافق اكتمال عودة الاستقطاب في الطبقة الخارجية، ونهايتها توافق عودة الاستقطاب في خلايا M في منتصف الجدار.'],
+U:[635,690,'U wave','موجة U','A small diastolic deflection after T, not always present. Explanations: papillary muscles or Purkinje fibres, late repolarization of M-cells, or after-potentials from ventricular stretch.','انحراف صغير في الانبساط بعد T وليس موجوداً دائماً. التفسيرات: العضلات الحليمية أو ألياف بوركينجي، أو عودة استقطاب متأخرة لخلايا M، أو جهود لاحقة بسبب تمدد البطين.'],
+TP:[690,810,'TP segment','المقطع TP','The baseline between beats: no net electrical activity, the heart is at rest (general reference).','خط الأساس بين النبضات: لا نشاط كهربائي صافٍ والقلب في حالة راحة (مرجع عام).']};
+const INT={PRi:[10,150,'PR interval','الفاصل PR','From the start of the P wave to the start of QRS: atrial depolarization plus the AV delay. Typical 0.12–0.20 s (general reference).','من بداية الموجة P إلى بداية QRS: زوال الاستقطاب الأذيني مع تأخير AV. المعتاد 0.12–0.20 s (مرجع عام).'],
+QT:[150,545,'QT interval','الفاصل QT','From the start of QRS to the end of T. It depends strongly on heart rate, so a corrected value is used: QTc = QT/√RR.','من بداية QRS إلى نهاية T. يعتمد كثيراً على معدل القلب لذلك تُستخدم قيمة مصححة: QTc = QT/√RR.'],
+RR:[180,980,'RR interval','الفاصل RR','Peak of one R wave to the next: one cardiac cycle. Heart rate = 60 / RR (seconds).','من قمة موجة R إلى التي تليها: دورة قلبية واحدة. معدل القلب = 60 / RR (بالثواني).']};
+(function(){const el=$('#waveSvg');el.innerHTML=ecgBase(1900);const ov=$('#ov',el),lb=$('#lbl',el);
+ let h='';Object.keys(REG).forEach(k=>{const r=REG[k];[0,800].forEach(o=>{h+='<rect class="reg" data-k="'+k+'" x="'+X(r[0]+o)+'" y="6" width="'+(0.3*(r[1]-r[0]))+'" height="190"/>'})});
+ ov.innerHTML=h;
+ [['P',55,.15],['Q',158,-.12],['R',180,1.2],['S',226,-.25],['T',445,.32],['U',660,.05]].forEach(p=>{lb.innerHTML+='<text x="'+(X(p[1])-4)+'" y="'+(Y(p[2])+(p[2]<0?14:-6))+'" font-size="12" font-weight="600">'+p[0]+'</text>'});
+ const br=document.createElementNS('http://www.w3.org/2000/svg','g');br.id='br';$('svg',el).appendChild(br);
+ const pills=$('#wavePills');const keys=Object.keys(REG).concat(Object.keys(INT));
+ pills.innerHTML=keys.map(k=>{const r=REG[k]||INT[k];return '<button class="pill" type="button" data-k="'+k+'" aria-pressed="false">'+bi(r[2],r[3])+'</button>'}).join('');
+ function pick(k){$$('.pill',pills).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));$$('.reg',el).forEach(r=>r.classList.toggle('on',r.dataset.k===k));br.innerHTML='';
+  if(INT[k]){const r=INT[k];br.innerHTML='<path d="M'+X(r[0])+' 205V212H'+X(r[1])+'V205" fill="none" stroke="var(--accent)" stroke-width="2"/><text x="'+((X(r[0])+X(r[1]))/2-12)+'" y="226" font-size="10" style="fill:var(--accent)">'+k.replace('PRi','PR')+'</text>'}
+  const r=REG[k]||INT[k];$('#waveDetail').innerHTML='<h4>'+bi(r[2],r[3])+'</h4><p>'+bi(r[4],r[5])+'</p>'}
+ $$('.pill',pills).forEach(b=>b.addEventListener('click',()=>pick(b.dataset.k)));
+ $$('.reg',el).forEach(r=>r.style.cursor='pointer');$('svg',el).addEventListener('click',e=>{const t=e.target;if(t.dataset&&t.dataset.k)pick(t.dataset.k)});
+ // allow clicking the grid through regions: regions sit under the trace, set pointer
+ $$('.reg',el).forEach(r=>{r.style.pointerEvents='all';r.style.fill='var(--accent)'});
+ pick('QRS')})();
+// paper calc
+ctl(['pSpeed','pRR','pQT','pR'],()=>{const sp=val('pSpeed'),rr=val('pRR'),qt=val('pQT'),r=val('pR');const rrs=rr/sp,qts=qt/sp;
+ setO('pRRo',rr+' mm');setO('pQTo',qt+' mm');setO('pRo',r+' mm');
+ const hr=60/rrs,qtc=qts/Math.sqrt(rrs);
+ out('pOut',[[bi('R–R time','زمن R–R'),fmt(rrs*1000,0)+' ms'],[bi('Heart rate','معدل القلب'),fmt(hr,0)+' bpm',null,hr<60||hr>100?'bad':'good'],[bi('Q–T time','زمن Q–T'),fmt(qts*1000,0)+' ms'],['QTc (Bazett)',fmt(qtc*1000,0)+' ms'],[bi('R amplitude','سعة R'),fmt(r/10,1)+' mV']])});
+// conduction timeline
+const EV=[[0,'SA node','العقدة SA','impulse generated','توليد الدفعة','','0.05'],[5,'Right atrium','الأذين الأيمن','depolarization','زوال الاستقطاب','P','0.8–1.0'],[50,'AV node','العقدة AV','impulse arrives','وصول الدفعة','PQ','0.02–0.05'],[85,'Left atrium','الأذين الأيسر','depolarization','زوال الاستقطاب','P','0.8–1.0'],[125,'AV node','العقدة AV','impulse leaves','مغادرة الدفعة','PQ',''],[130,'Bundle of His','حزمة هيس','activated','تنشيط','','1.0–1.5'],[145,'Bundle branches','فروع الحزمة','activated','تنشيط','','1.0–1.5'],[150,'Purkinje fibres','ألياف بوركينجي','activated','تنشيط','','3.0–3.5'],[175,'Septum (endocardium)','الحاجز (الشغاف)','depolarization','زوال الاستقطاب','QRS','0.3 axial'],[190,'Left ventricle (endocardium)','البطين الأيسر (الشغاف)','depolarization','زوال الاستقطاب','QRS',''],[225,'Left ventricle (epicardium)','البطين الأيسر (الخارجي)','depolarization','زوال الاستقطاب','QRS','0.8 transv.'],[250,'Right ventricle (epicardium)','البطين الأيمن (الخارجي)','depolarization','زوال الاستقطاب','QRS',''],[400,'Epicardium, both ventricles','الطبقة الخارجية للبطينين','repolarization','عودة الاستقطاب','T','0.5'],[600,'Left ventricle (endocardium)','البطين الأيسر (الشغاف)','repolarization','عودة الاستقطاب','T','']];
+(function(){$('#condSvg').innerHTML=ecgBase(760);const svg=$('#condSvg svg');svg.setAttribute('viewBox','0 0 260 240');svg.innerHTML=svg.innerHTML;
+ svg.setAttribute('viewBox','0 0 260 240');const cur=document.createElementNS('http://www.w3.org/2000/svg','line');cur.setAttribute('y1','0');cur.setAttribute('y2','200');cur.setAttribute('stroke','var(--accent)');cur.setAttribute('stroke-width','2');svg.appendChild(cur);
+ $('#condTbl tbody').innerHTML=EV.map((e,i)=>'<tr data-i="'+i+'"><td class="mono">'+e[0]+'</td><td>'+bi(e[1],e[2])+'</td><td>'+bi(e[3],e[4])+'</td><td>'+e[5]+'</td><td class="mono">'+e[6]+'</td></tr>').join('');
+ ctl(['condT'],()=>{const t=val('condT');setO('condO',t+' ms');cur.setAttribute('x1',X(t));cur.setAttribute('x2',X(t));let last=-1;EV.forEach((e,i)=>{if(e[0]<=t)last=i});$$('#condTbl tbody tr').forEach((r,i)=>{r.className=i===last?'now':(i<last?'on':'')})})})();
+// genesis
+(function(){let mode='dep';const cells=$('#genCells');cells.innerHTML=Array.from({length:24},()=>'<div class="cell"></div>').join('');
+ const modes=[['dep','Depolarization','زوال الاستقطاب'],['rep','Repolarization','عودة الاستقطاب']];
+ $('#genMode').innerHTML=modes.map(m=>'<button class="pill" type="button" data-m="'+m[0]+'" aria-pressed="'+(m[0]===mode)+'">'+bi(m[1],m[2])+'</button>').join('');
+ $$('#genMode .pill').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.m;$$('#genMode .pill').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.m===mode)));draw()}));
+ const sm=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+ function draw(){const p=val('genP')/100,w=mode==='dep'?.08:.5;setO('genO',Math.round(p*100)+'%');
+  $$('.cell',cells).forEach((c,i)=>{const f=i/23;const s=p*(1+w)-(1-f);let a=clamp(s/w,0,1);if(mode==='rep')a=1-a;const r=Math.round(58+a*(214-58)),g=Math.round(123+a*(62-123)),b=Math.round(213+a*(62-213));c.style.background='rgb('+r+','+g+','+b+')'});
+  const v=sm(0,.15,p)*(1-sm(.85,1,p))*(mode==='dep'?1:-1);const pts=[];for(let k=0;k<=100;k++){const q=k/100;pts.push((k?'L':'M')+(10+q*240)+' '+(50-30*sm(0,.15,q)*(1-sm(.85,1,q))*(mode==='dep'?1:-1)))}
+  $('#genSvg').innerHTML='<svg class="ltr" viewBox="0 0 260 100" style="background:var(--surface2);border-radius:8px"><line x1="10" x2="250" y1="50" y2="50" stroke="var(--muted)" stroke-dasharray="3 3"/><path d="'+pts.join('')+'" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="'+(10+p*240)+'" cy="'+(50-30*v)+'" r="5" fill="var(--accent)"/><text x="12" y="14" font-size="10">V_ECG</text></svg>';
+  $('#genDetail').innerHTML=mode==='dep'?'<h4>'+bi('Depolarization (red = activated)','زوال الاستقطاب (الأحمر = منشَّط)')+'</h4><p>'+bi('A narrow zone (about 1 mm) moves through the tissue. Na⁺ rushes in, local-circuit currents flow ahead of the front, and the surface electrode sees a positive deflection while the wavefront is between the cells and the electrode.','تتحرك منطقة ضيقة (نحو 1 mm) عبر النسيج. يدخل Na⁺ وتجري تيارات الدائرة المحلية أمام الجبهة، فيرى القطب السطحي انحرافاً موجباً ما دامت الجبهة بين الخلايا والقطب.')+'</p>':'<h4>'+bi('Repolarization (blue = recovered)','عودة الاستقطاب (الأزرق = تعافى)')+'</h4><p>'+bi('A wide zone (about 100 mm), because each cell recovers after its own action potential ends, not because its neighbour did. K⁺ leaves the cell. The deflection is smaller and opposite in sign in this drawing; in the ventricles the T wave still comes out upright because the outer layer recovers first.','منطقة عريضة (نحو 100 mm) لأن كل خلية تتعافى بعد انتهاء جهد الفعل الخاص بها لا بسبب جارتها. يخرج K⁺ من الخلية. الانحراف أصغر وعكسي في هذا الرسم؛ وفي البطينين تظهر الموجة T موجبة لأن الطبقة الخارجية تتعافى أولاً.')+'</p>'}
+ ctl(['genP'],draw)})();
+// triangle
+(function(){const V={RA:[50,40],LA:[250,40],LL:[150,200]};const mid=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
+ const L={I:{f:'RA',t:'LA',en:'Lead I: RA (−) to LA (+). V_I = Φ_L − Φ_R.',ar:'القطب I: RA (−) إلى LA (+). V_I = Φ_L − Φ_R.'},II:{f:'RA',t:'LL',en:'Lead II: RA (−) to LL (+). V_II = Φ_F − Φ_R. The R wave is largest here.',ar:'القطب II: RA (−) إلى LL (+). V_II = Φ_F − Φ_R. تكون الموجة R أكبر ما يمكن هنا.'},III:{f:'LA',t:'LL',en:'Lead III: LA (−) to LL (+). V_III = Φ_F − Φ_L.',ar:'القطب III: LA (−) إلى LL (+). V_III = Φ_F − Φ_L.'},
+ aVR:{f:mid(V.LA,V.LL),t:V.RA,en:'aVR: right arm against LA and LL tied together.',ar:'aVR: الذراع اليمنى مقابل LA وLL مربوطتين معاً.'},aVL:{f:mid(V.RA,V.LL),t:V.LA,en:'aVL: left arm against RA and LL tied together.',ar:'aVL: الذراع اليسرى مقابل RA وLL مربوطتين معاً.'},aVF:{f:mid(V.RA,V.LA),t:V.LL,en:'aVF: left leg against the two arms tied together.',ar:'aVF: الرجل اليسرى مقابل الذراعين مربوطتين معاً.'}};
+ let sel='II';const pills=$('#triPills');pills.innerHTML=Object.keys(L).map(k=>'<button class="pill" type="button" data-k="'+k+'" aria-pressed="false">'+k+'</button>').join('');
+ function pt(x){return typeof x==='string'?V[x]:x}
+ function draw(){const l=L[sel],a=pt(l.f),b=pt(l.t);const aug=sel.startsWith('aV');
+  $('#triSvg').innerHTML='<svg class="ltr" viewBox="0 0 300 240" role="img" aria-label="Einthoven triangle"><defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--accent)"/></marker></defs><path d="M50 40H250L150 200z" fill="var(--surface2)" stroke="var(--muted)" stroke-width="1.5"/><line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="var(--accent)" stroke-width="3.5" '+(aug?'stroke-dasharray="6 4" ':'')+'marker-end="url(#ah)"/><circle cx="150" cy="95" r="4" fill="var(--fg)"/><text x="28" y="34" font-size="13" font-weight="600">RA</text><text x="252" y="34" font-size="13" font-weight="600">LA</text><text x="136" y="220" font-size="13" font-weight="600">LL</text><text x="140" y="30" font-size="11" style="fill:var(--muted)">I</text><text x="80" y="128" font-size="11" style="fill:var(--muted)">II</text><text x="210" y="128" font-size="11" style="fill:var(--muted)">III</text></svg>';
+  $$('.pill',pills).forEach(p=>p.setAttribute('aria-pressed',String(p.dataset.k===sel)));$('#triDetail').innerHTML='<p>'+bi(l.en,l.ar)+'</p>'}
+ $$('.pill',pills).forEach(p=>p.addEventListener('click',()=>{sel=p.dataset.k;draw()}));draw();
+ ctl(['phR','phL','phF'],()=>{const r=val('phR'),l=val('phL'),f=val('phF');setO('phRo',fmt(r));setO('phLo',fmt(l));setO('phFo',fmt(f));const I=l-r,II=f-r,III=f-l,aR=r-(l+f)/2,aL=l-(r+f)/2,aF=f-(r+l)/2;
+  out('triOut',[['V_I',fmt(I)+' mV'],['V_II',fmt(II)+' mV'],['V_III',fmt(III)+' mV'],['I + III',fmt(I+III)+' mV','','good'],['aVR',fmt(aR)],['aVL',fmt(aL)],['aVF',fmt(aF)],['aVR+aVL+aVF',fmt(aR+aL+aF),'','good']])})})();
+// block diagrams
+chain('ecgChain1',[
+{k:'el',t:['Electrodes','الأقطاب'],d:['Pick up the body surface potentials (millivolt level).','تلتقط جهود سطح الجسم (بمستوى الميلي فولت).']},
+{k:'ls',t:['Lead selector','مفتاح اختيار القطب'],d:['Selects the electrodes two by two according to the lead program.','يختار الأقطاب اثنين اثنين حسب برنامج الأقطاب (lead program).']},
+{k:'pre',t:['Preamplifier','المضخم الأولي'],d:['A 3- or 4-stage long-tail-pair differential amplifier with strong negative feedback from the last stage to the first for stability. Signal is capacitively coupled symmetrically.','مضخم تفاضلي من 3 أو 4 مراحل (الزوج ذو الذيل الطويل) مع تغذية عكسية سالبة قوية من الأخيرة إلى الأولى للثبات. تُقرن الإشارة سعوياً بشكل متماثل.']},
+{k:'pa',t:['Power amplifier','مضخم القدرة'],d:['Push-pull differential type. One input transistor is driven by the preamplified signal, the other by the pen-position feedback.','من نوع push-pull تفاضلي. أحد ترانزستورَي الدخل يقوده الإشارة المضخمة والآخر تقوده تغذية موضع القلم.']},
+{k:'br',t:['Bridge output circuit','دائرة الخرج الجسرية'],d:['Single-ended output that feeds the pen motor.','خرج أحادي الطرف يغذي محرك القلم.']},
+{k:'pen',t:['Pen motor','محرك القلم'],d:['Deflects the writing arm over the paper. A direct-writing recorder is enough because the ECG bandwidth is limited.','يحرّف ذراع الكتابة على الورق. يكفي مسجّل بالكتابة المباشرة لأن عرض نطاق ECG محدود.']}],
+[{k:'fb',t:['Frequency-selective feedback','شبكة التغذية الخلفية'],d:['An R–C network set by the manufacturer that damps the pen motor.','شبكة R–C تضبطها الشركة المصنعة وتعمل على تخميد محرك القلم.']},
+{k:'aux',t:['Auxiliary circuits','دوائر مساعدة'],d:['1 mV calibration signal, automatic amplifier blocking during lead switching, chart-motor speed control, and stand-by mode.','إشارة معايرة 1 mV، حجب المضخم تلقائياً أثناء تبديل القطب، تحكم بسرعة محرك الورق، ووضع الانتظار.']},
+{k:'ch',t:['Chart transport motor','محرك نقل الورق'],d:['Moves the paper, usually 25 mm/s.','يحرّك الورق، عادةً 25 mm/s.']}],true);
+chain('ecgChain2',[
+{k:'es',t:['Electrosurgery filter','مرشح الجراحة الكهربائية'],d:['Low-pass filter on RA, LA, LL and RL inputs against electrosurgery, radio-frequency emissions and the 50 kHz respiration-detection current. Cut-off above 10 kHz, multistage.','مرشح تمرير منخفض على مداخل RA وLA وLL وRL ضد الجراحة الكهربائية والتداخل الراديوي وتيار كشف التنفس 50 kHz. التردد القاطع فوق 10 kHz ومتعدد المراحل.']},
+{k:'hv',t:['High-voltage protection','حماية الجهد العالي'],d:['Lets the amplifier survive defibrillation. The price is higher noise from the large series resistance in each lead.','تسمح للمضخم بتحمل صدمة إزالة الرجفان. الثمن ضجيج أعلى بسبب المقاومة التسلسلية الكبيرة في كل قطب.']},
+{k:'sel',t:['Lead selector + STD 1 mV','مفتاح القطب + معايرة 1 mV'],d:['Gives the lead configuration to a DC-coupled amplifier. A 1 mV level, made by dividing the supply, is injected by a push button for calibration.','يعطي ترتيب القطب إلى مضخم مقترن DC. مستوى 1 mV ناتج عن تقسيم مصدر القدرة يُحقن بزر ضغط للمعايرة.']},
+{k:'dc',t:['DC amp','مضخم DC'],d:['Amplifies the selected lead signal inside the isolated (guarded) section.','يضخم إشارة القطب المختار داخل القسم المعزول (المحمي).']},
+{k:'mod',t:['Synchronous modulator','المضمِّن المتزامن'],d:['Linearly modulates the ECG on a 100 kHz square wave. A square wave reduces the power needed by the driven transistors.','يضمّن إشارة ECG خطياً على موجة مربعة 100 kHz. الموجة المربعة تقلل القدرة التي تحتاجها الترانزستورات.']},
+{k:'tr',t:['Low-capacitance transformer','محوّل منخفض السعة'],d:['Carries the modulated signal across the isolation barrier. 100 kHz is a compromise: high enough for a small transformer, low enough for cheap transistors and logic.','ينقل الإشارة المضمَّنة عبر حاجز العزل. 100 kHz حل وسط: عالٍ بما يكفي لمحوّل صغير ومنخفض بما يكفي لترانزستورات ومنطق رخيص.']},
+{k:'dem',t:['Synchronous demodulator','مزيل التضمين المتزامن'],d:['Recovers the ECG using switching FETs for low noise. Isolation can also be made with an optical isolator.','يستعيد إشارة ECG باستخدام FET للتبديل لضجيج منخفض. يمكن العزل أيضاً بعازل ضوئي.']}],
+[{k:'osc',t:['100 kHz oscillator','مذبذب 100 kHz'],d:['Drives the primary of the isolated power transformer.','يقود الملف الابتدائي لمحوّل القدرة المعزول.']},
+{k:'rect',t:['Rectifier and filter','مقوّم ومرشح'],d:['Makes the isolated ±6 V supply for the patient-side circuit, with a floating common.','يصنع مصدر ±6 V المعزول لدائرة جهة المريض مع أرضي عائم (floating common).']},
+{k:'cm',t:['Shielding and CMRR','التدريع وCMRR'],d:['High common-mode rejection comes from proper shielding, making capacitance from inputs to earth negligible. The preamplifier is preferably in a separate shielded case.','يأتي الرفض العالي للنمط المشترك من التدريع الجيد وجعل سعة المداخل إلى الأرض مهملة. ويفضّل وضع المضخم الأولي في علبة مدرَّعة منفصلة.']}],true);
+cards('ecgCards',[['SA node','العقدة SA','Primary pacemaker, about 70–80 beats/min.','الناظم الأساسي، نحو 70–80 نبضة/دقيقة.'],['Depolarization','زوال الاستقطاب','Propagating wave, narrow zone (≈1 mm), Na⁺ in.','موجة منتشرة بمنطقة ضيقة (≈1 mm) ودخول Na⁺.'],['Repolarization','عودة الاستقطاب','Each cell recovers after its own action potential; wide zone, K⁺ out.','كل خلية تتعافى بعد جهد الفعل الخاص بها؛ منطقة عريضة وخروج K⁺.'],['Lead','القطب (Lead)','Trace of the voltage difference between two body sites.','منحنى فرق الجهد بين موضعين في الجسم.'],['Einthoven triangle','مثلث أينتهوفن','RA–LA–LL triangle; V_II = V_I + V_III.','مثلث RA–LA–LL؛ V_II = V_I + V_III.'],['Augmented leads','الأقطاب المعززة','aVR, aVL, aVF: one limb against the other two tied together.','aVR وaVL وaVF: طرف واحد مقابل الطرفين الآخرين مربوطين.'],['CMRR','نسبة رفض النمط المشترك','Ability to reject interference common to both inputs; 100–120 dB.','القدرة على رفض التداخل المشترك بين المدخلين؛ 100–120 dB.'],['Isolation amplifier','مضخم العزل','Separates patient from mains; leakage ≤ 10 µA.','يفصل المريض عن الشبكة؛ التسرب ≤ 10 µA.'],['QTc','QTc','QT corrected for heart rate: QT/√RR.','QT مصحح بمعدل القلب: QT/√RR.'],['Notch filter','مرشح ملتقط','Rejects a narrow band (50 Hz mains hum).','يرفض نطاقاً ضيقاً (طنين الشبكة 50 Hz).']]);
+runQuiz('ecgQuiz','ecg',[
+{q:['What frequency range is diagnostically useful in ECG?','ما نطاق التردد المفيد تشخيصياً في ECG؟'],o:[['0.05–150 Hz','0.05–150 Hz'],['10–10,000 Hz','10–10,000 Hz'],['50–60 Hz','50–60 Hz'],['1–5 kHz','1–5 kHz']],a:0,w:['The amplifier and writer must reproduce 0.05 to 150 Hz.','يجب أن يعيد المضخم والكاتب 0.05 إلى 150 Hz.']},
+{q:['Which part of the ECG shows ventricular repolarization?','أي جزء من ECG يمثل عودة الاستقطاب البطيني؟'],o:[['P wave','موجة P'],['QRS complex','المعقد QRS'],['T wave','موجة T'],['PR segment','المقطع PR']],a:2,w:['T wave. P is atrial depolarization; QRS is ventricular depolarization.','موجة T. أما P فزوال استقطاب أذيني وQRS زوال استقطاب بطيني.']},
+{q:['Lead II is recorded between:','يُسجَّل القطب II بين:'],o:[['RA and LA','RA وLA'],['RA and LL','RA وLL'],['LA and LL','LA وLL'],['LL and RL','LL وRL']],a:1,w:['Lead II: right arm to left leg.','القطب II: الذراع اليمنى إلى الرجل اليسرى.']},
+{q:['By Kirchhoff/Einthoven, which is true?','حسب كيرشوف/أينتهوفن أي علاقة صحيحة؟'],o:[['V_II = V_I + V_III','V_II = V_I + V_III'],['V_I = V_II + V_III','V_I = V_II + V_III'],['V_III = V_I + V_II','V_III = V_I + V_II'],['V_I = V_II × V_III','V_I = V_II × V_III']],a:0,w:['(Φ_L−Φ_R)+(Φ_F−Φ_L) = Φ_F−Φ_R.','(Φ_L−Φ_R)+(Φ_F−Φ_L) = Φ_F−Φ_R.']},
+{q:['Why is the patient circuit isolated from the mains?','لماذا تُعزل دائرة المريض عن الشبكة؟'],o:[['To reduce 50 Hz noise only','لتقليل ضجيج 50 Hz فقط'],['To limit leakage current and microshock risk (≤ 10 µA)','لتحديد تيار التسرب وخطر الصدمة الميكروية (≤ 10 µA)'],['To increase the paper speed','لزيادة سرعة الورق'],['To make the pen lighter','لجعل القلم أخف']],a:1,w:['With intracardiac catheters, microshock is dangerous; AHA limit is 10 µA.','مع قسطرة القلب تكون الصدمة الميكروية خطرة؛ حد AHA هو 10 µA.']},
+{q:['At 25 mm/s, one small square (1 mm) equals:','عند 25 mm/s المربع الصغير (1 mm) يساوي:'],o:[['0.2 s','0.2 s'],['0.04 s','0.04 s'],['0.1 s','0.1 s'],['1 s','1 s']],a:1,w:['1/25 s = 0.04 s; a 5 mm block = 0.2 s.','1/25 s = 0.04 s؛ والمربع الكبير 5 mm = 0.2 s.']},
+{q:['Which structure is the primary pacemaker?','أي بنية هي الناظم الأساسي؟'],o:[['AV node','العقدة AV'],['Bundle of His','حزمة هيس'],['Purkinje fibres','ألياف بوركينجي'],['SA node','العقدة SA']],a:3,w:['The SA node has the highest intrinsic rate (70–80/min) so it sets the heart rate.','للعقدة SA أعلى تردد ذاتي (70–80/دقيقة) لذلك تحدد معدل القلب.']},
+{q:['Heart rate if the R–R distance is 20 mm at 25 mm/s?','معدل القلب إذا كانت المسافة R–R تساوي 20 mm عند 25 mm/s؟'],o:[['60 bpm','60 نبضة/د'],['75 bpm','75 نبضة/د'],['100 bpm','100 نبضة/د'],['120 bpm','120 نبضة/د']],a:1,w:['RR = 20/25 = 0.8 s, HR = 60/0.8 = 75.','RR = 20/25 = 0.8 s، HR = 60/0.8 = 75.']}]);
+})();
+</script>
+<script>
+(function(){
+"use strict";
+const {$,$$,bi,bt,clamp,fmt,chain,cards,runQuiz,order,ctl,out,val,setO,store}=window.L;
+const rcf=(R,rpm)=>1.118e-5*R*rpm*rpm;
+// sedimentation sandbox
+(function(){const cv=$('#sedCv'),cx=cv.getContext('2d');let run=!matchMedia('(prefers-reduced-motion: reduce)').matches,ps=[],last=0,vis=true;
+ const N=46;function reset(){ps=[];for(let i=0;i<N;i++)ps.push({a:[Math.random(),Math.random()],y:[0,0],x:[0,0]});ps.forEach(p=>{p.y=[p.a[1]*150+25,p.a[1]*150+25];p.x=[p.a[0],p.a[0]]})}
+ reset();
+ const tube=[[70,20,60,170],[400,20,60,170]];
+ function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n)||'#888'}
+ function params(){const rpm=val('sedRpm'),d=val('sedDen'),T=val('sedTemp');const eta=Math.exp(-0.025*(T-20));const g=rcf(8,rpm);return{rpm,d,T,eta,g}}
+ function draw(){const P=params();const fg=getComputedStyle(cv).color||'#888';cx.clearRect(0,0,560,220);cx.lineWidth=2;cx.strokeStyle='#8a99a8';cx.fillStyle='#8a99a8';cx.font='12px sans-serif';
+  [0,1].forEach(k=>{const t=tube[k];cx.strokeStyle='#8a99a8';cx.beginPath();cx.moveTo(t[0],t[1]);cx.lineTo(t[0],t[1]+t[3]);cx.lineTo(t[0]+t[2],t[1]+t[3]);cx.lineTo(t[0]+t[2],t[1]);cx.stroke();
+   ps.forEach(p=>{cx.fillStyle=P.d>=0?'#c4372c':'#2759c0';cx.beginPath();cx.arc(t[0]+6+p.x[k]*(t[2]-12),t[1]+p.y[k]-20+5,3,0,7);cx.fill()});
+   cx.fillStyle='#8a99a8';cx.fillText(k?('centrifuge  '+Math.round(P.g)+' ×g'):'gravity  1 ×g',t[0]-10,t[1]+t[3]+20)})}
+ function step(ts){if(!last)last=ts;const dt=Math.min(.05,(ts-last)/1000);last=ts;if(run&&vis){const P=params();const base=0.12;
+   ps.forEach(p=>{[1,0].forEach(k=>{const acc=k?P.g:1;let v=base*P.d*acc/P.eta;p.y[k]+=v*dt;if(P.d>0&&p.y[k]>170-p.a[0]*8)p.y[k]=170-p.a[0]*8;if(P.d<0&&p.y[k]<20+p.a[0]*8)p.y[k]=20+p.a[0]*8})})}
+  draw();requestAnimationFrame(step)}
+ $('#sedPlay').addEventListener('click',()=>{run=!run});$('#sedReset').addEventListener('click',()=>{reset();run=true});
+ if('IntersectionObserver' in window)new IntersectionObserver(e=>{vis=e[0].isIntersecting}).observe(cv);
+ ctl(['sedRpm','sedDen','sedTemp'],()=>{const P=params();setO('sedRpmO',P.rpm);setO('sedDenO',fmt(P.d));setO('sedTempO',P.T+' °C');out('sedOut',[['RCF',fmt(P.g,0)+' ×g'],[bi('Relative viscosity','اللزوجة النسبية'),fmt(P.eta)],[bi('Speed vs gravity','السرعة مقابل الجاذبية'),'× '+fmt(P.g,0)],[bi('Outcome','النتيجة'),P.d>0?'↓ sink':(P.d<0?'↑ float':'stay')]])});
+ requestAnimationFrame(step)})();
+// types
+const TYPES=[
+{k:'micro',t:['1 Microcentrifuge','1 جهاز طرد مصغّر'],d:['Small tubes 0.2–2.0 mL and plates up to 96 wells; compact; up to 30,000 ×g. Handles nucleic-acid minipreps, spin columns, PCR tubes and strips, and haematocrit capillaries.','أنابيب صغيرة 0.2–2.0 mL وصفائح حتى 96 بئراً؛ مدمج؛ حتى 30,000 ×g. يناسب تنقية الأحماض النووية الصغيرة وأعمدة الدوران وأنابيب وشرائح PCR وشعيرات الهيماتوكريت.']},
+{k:'bench',t:['2 Small benchtop','2 مكتبي صغير'],d:['For small amounts of rapidly sedimenting material such as yeast cells and erythrocytes. Research (cell biology, microbiology, genomics, proteomics, biochemistry, pharmaceutical studies) and clinical (clinical chemistry, microbiology, haematology, immunology).','للكميات الصغيرة من المواد سريعة الترسب مثل خلايا الخميرة وكريات الدم الحمراء. في البحث (بيولوجيا الخلية، الأحياء الدقيقة، الجينوميات، البروتيوميات، الكيمياء الحيوية، الدراسات الدوائية) وفي السريريات (الكيمياء السريرية، الأحياء الدقيقة، أمراض الدم، المناعة).']},
+{k:'gen',t:['3 General purpose','3 متعدد الأغراض'],d:['Many choices of rotors, buckets and adapters; greater sample capacity and speed.','خيارات كثيرة من الدوّارات والدلاء والمحوّلات؛ سعة وسرعة أكبر.']},
+{k:'large',t:['4 Large capacity','4 كبير السعة'],d:['Reproducible separations for high-throughput work such as blood banking and bioprocessing.','فصل قابل للتكرار للأعمال عالية الإنتاجية مثل بنوك الدم والمعالجة الحيوية.']},
+{k:'super',t:['5 Superspeed','5 فائق السرعة'],d:['High speed and fast acceleration, to collect microorganisms, cell debris, larger organelles and precipitated proteins.','سرعة عالية وتسارع سريع لجمع الأحياء الدقيقة وحطام الخلايا والعضيّات الكبيرة والبروتينات المترسبة.']},
+{k:'ultra',t:['6 Ultracentrifuge','6 جهاز الطرد الفائق'],d:['Exceptional speed. Used for macromolecule and ligand-binding studies, separating lipoprotein fractions from plasma, and deproteinising physiological fluids for amino-acid analysis. Air friction heats the rotor even in a good vacuum, so many are refrigerated.','سرعة استثنائية. يُستخدم لدراسة الجزيئات الكبيرة وارتباط الليغاند وفصل أجزاء البروتينات الشحمية من البلازما وإزالة البروتينات من السوائل الفيزيولوجية لتحليل الأحماض الأمينية. احتكاك الهواء يسخّن الدوّار حتى في فراغ جيد لذلك كثير منها مبرَّد.']}];
+chain('cenTypes',TYPES,[],false);
+(function(){const R=[['Simple fixed-speed',2500,10000],['Low speed',500,12000],['High speed',12000,35000],['Ultra-high speed',35000,125000]];const ar={'Simple fixed-speed':'بسيط بسرعة ثابتة','Low speed':'منخفض السرعة','High speed':'عالي السرعة','Ultra-high speed':'فائق السرعة'};const L=v=>Math.log10(v),lo=L(500),hi=L(125000);const pc=v=>(L(v)-lo)/(hi-lo)*100;
+ $('#speedLadder').innerHTML=R.map(r=>'<div style="display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:center;margin-bottom:6px;direction:ltr"><span style="font-size:.82rem">'+bi(r[0],ar[r[0]])+'</span><div class="bar2" style="position:relative"><i style="position:absolute;left:'+pc(r[1])+'%;width:'+(pc(r[2])-pc(r[1]))+'%;background:var(--accent)"></i></div></div><div class="mono" style="font-size:.72rem;color:var(--muted);text-align:right;direction:ltr;margin-top:-4px">'+r[1].toLocaleString()+' – '+r[2].toLocaleString()+' rpm</div>').join('')})();
+(function(){const apps=[['PCR tubes, spin columns, nucleic-acid minipreps','أنابيب PCR وأعمدة الدوران وتنقية الأحماض النووية','micro'],['Yeast cells and erythrocytes in small volumes','خلايا الخميرة وكريات الدم الحمراء بأحجام صغيرة','bench'],['Choice of many rotors, buckets and adapters','اختيار من عدة دوّارات ودلاء ومحوّلات','gen'],['Blood banking and bioprocessing','بنوك الدم والمعالجة الحيوية','large'],['Collecting cell debris, organelles and precipitated proteins','جمع حطام الخلايا والعضيّات والبروتينات المترسبة','super'],['Separating lipoprotein fractions from plasma','فصل أجزاء البروتينات الشحمية من البلازما','ultra']];
+ const el=$('#cenMatch');el.innerHTML='<div class="scroll"><table>'+apps.map((a,i)=>'<tr><td>'+bi(a[0],a[1])+'</td><td style="min-width:190px"><select data-i="'+i+'"><option value="">—</option>'+TYPES.map(t=>'<option value="'+t.k+'">'+t.t[0]+' · '+t.t[1].slice(2)+'</option>').join('')+'</select></td><td class="r" style="width:2em"></td></tr>').join('')+'</table></div><div><button class="btn" id="mchk" type="button">'+bi('Check','تحقق')+'</button></div><div class="why" id="mres" hidden></div>';
+ $('#mchk').addEventListener('click',()=>{let ok=0;$$('select',el).forEach(s=>{const r=s.value===apps[+s.dataset.i][2];if(r)ok++;s.closest('tr').querySelector('.r').textContent=r?'✓':'✗'});const m=$('#mres');m.hidden=false;m.innerHTML=ok+' / '+apps.length})})();
+// RCF calc
+(function(){ctl(['rcfR','rcfS','rcfT'],()=>{const R=val('rcfR'),S=val('rcfS'),T=val('rcfT');setO('rcfRo',R+' cm');setO('rcfSo',S);const g=rcf(R,S);const need=Math.sqrt(T/(1.118e-5*R));
+ out('rcfOut',[['RCF',fmt(g,0)+' ×g'],[bi('RCF with R +20%','RCF عند R +20%'),fmt(rcf(R*1.2,S),0)+' ×g','','good'],[bi('RCF with rpm ×2','RCF عند rpm ×2'),fmt(rcf(R,S*2),0)+' ×g'],[bi('rpm for target','rpm للقيمة المطلوبة'),fmt(need,0)+' rpm']])});
+ $('#rcfEx').addEventListener('click',()=>{$('#rcfR').value=7;$('#rcfS').value=5000;$('#rcfR').dispatchEvent(new Event('input'))})})();
+// parts
+chain('cenParts',[
+{k:'rotor',t:['Rotor and motor','الدوّار والمحرك'],d:['The rotor is attached to the motor shaft. A simple rotor is a metal block with angled holes. Any unbalanced load can damage the motor and cause uneven speed.','الدوّار مثبّت على عمود المحرك. الدوّار البسيط كتلة معدنية فيها ثقوب مائلة. أي حِمل غير متوازن قد يتلف المحرك ويسبب سرعة غير منتظمة.']},
+{k:'speed',t:['Rotation speed','سرعة الدوران'],d:['Simplest: fixed 2,500–10,000 rpm; maybe two selectable speeds; variable-speed units use a rheostat (can be nonlinear), stepper motors or servo systems, which must be verified regularly. Low speed up to 12,000 rpm, high speed up to 35,000 rpm, ultra-high up to 125,000 rpm.','الأبسط: سرعة ثابتة 2,500–10,000 rpm؛ وقد توجد سرعتان للاختيار؛ والمتغيرة السرعة تستخدم rheostat (قد يكون غير خطي) أو محركات خطوية أو أنظمة سيرفو ويجب التحقق منها دورياً. منخفضة السرعة حتى 12,000 rpm وعالية حتى 35,000 rpm وفائقة حتى 125,000 rpm.']},
+{k:'timer',t:['Timer','المؤقت'],d:['Electronic or mechanical, from seconds to minutes; many have a "hold" setting and some delay the spin after Start. Mechanical timers break and need lubrication during preventive maintenance. Electronic ones are more accurate but still need checking.','إلكتروني أو ميكانيكي من ثوانٍ إلى دقائق؛ كثير منها فيه وضع «hold» وبعضها يؤخر الدوران بعد الضغط على التشغيل. المؤقتات الميكانيكية تتعطل وتحتاج تشحيماً أثناء الصيانة الوقائية. الإلكترونية أدق لكنها تحتاج فحصاً.']},
+{k:'brush',t:['Carbon brushes','الفرش الكربونية'],d:['Most low-speed units (below 10,000 rpm) use carbon brushes for electrical contact with the rotating part. They wear and must be replaced by brushes of the same size. If the spring is weak, broken or missing, or the caps are loose or cracked, the motor may not spin or run erratically. Ultra-high-speed units usually have three-phase motors (three brushes instead of two).','معظم الأجهزة منخفضة السرعة (أقل من 10,000 rpm) تستخدم فرشاً كربونية للتماس الكهربائي مع الجزء الدوّار. تبلى ويجب استبدالها بفرش بنفس الحجم. إذا كان النابض ضعيفاً أو مكسوراً أو مفقوداً أو كانت الأغطية مرتخية أو متشققة فقد لا يدور المحرك أو يعمل بشكل متقطع. الأجهزة فائقة السرعة تستخدم عادةً محركات ثلاثية الطور (ثلاث فرش بدل اثنتين).']},
+{k:'brake',t:['Braking system','نظام الكبح'],d:['Left alone, a rotor at 100,000 rpm could take a long time to stop. The brake is not mechanical: a switch reverses the electrical field in the motor. Hold it in "reverse/stop" only a few seconds at a time.','لو تُرك دوّار عند 100,000 rpm لاستغرق وقتاً طويلاً ليتوقف. المكبح ليس ميكانيكياً: مفتاح يعكس المجال الكهربائي في المحرك. اضغطه في وضع «عكس/إيقاف» لبضع ثوانٍ فقط في كل مرة.']},
+{k:'lock',t:['Cover interlock','قفل الغطاء'],d:['The rotor must not spin unless the cover is closed. A common design is a solenoid pushing a rod through a hole in the latch. More complex versions use several solenoids, flexible cables and a clock tied to the rpm indicator, so the lid stays locked until a set time after the speed reaches zero.','يجب ألا يدور الدوّار ما لم يُغلق الغطاء. تصميم شائع: ملف لولبي (solenoid) يدفع قضيباً عبر ثقب في مزلاج الغطاء. وهناك تصاميم أعقد بعدة ملفات وكابلات مرنة وساعة مرتبطة بمؤشر rpm فيبقى الغطاء مقفلاً حتى مرور زمن محدد بعد وصول السرعة إلى الصفر.']}],[],false);
+// balance lab
+(function(){const slots=[0,1,2,3,4,5].map(i=>{const a=(-90+60*i)*Math.PI/180;return{x:110+62*Math.cos(a),y:110+62*Math.sin(a),c:Math.cos(a),s:Math.sin(a)}});let has=[false,false,false,false,false,false],running=false;
+ function svg(){return '<svg class="ltr" viewBox="0 0 220 220"><circle cx="110" cy="110" r="100" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><g id="rot" class="'+(running?(bal()?'spinning':'shaking'):'')+'"><circle cx="110" cy="110" r="88" fill="none" stroke="var(--muted)" stroke-width="1"/>'+slots.map((s,i)=>'<g class="slot'+(has[i]?' has':'')+'" data-i="'+i+'"><circle cx="'+s.x+'" cy="'+s.y+'" r="15"/><text x="'+s.x+'" y="'+(s.y+4)+'" text-anchor="middle" font-size="11" style="fill:'+(has[i]?'#fff':'var(--muted)')+'">'+(i+1)+'</text></g>').join('')+(vec().m>1e-6?'<line x1="110" y1="110" x2="'+(110+vec().x*28)+'" y2="'+(110+vec().y*28)+'" stroke="var(--bad)" stroke-width="3"/>':'')+'<circle cx="110" cy="110" r="5" fill="var(--fg)"/></g></svg>'}
+ function vec(){let x=0,y=0;has.forEach((h,i)=>{if(h){x+=slots[i].c;y+=slots[i].s}});return{x,y,m:Math.hypot(x,y)}}
+ function bal(){return vec().m<1e-6}
+ function draw(){$('#balSvg').innerHTML=svg();$$('#balSvg .slot').forEach(g=>g.addEventListener('click',()=>{if(running)return;has[+g.dataset.i]=!has[+g.dataset.i];draw()}));msg()}
+ function msg(){const n=has.filter(Boolean).length,lid=$('#balLid').checked;let h;
+  if(running)h=bal()?'<h4 style="color:var(--ok)">'+bi('Running smoothly','يعمل بسلاسة')+'</h4>':'<h4 style="color:var(--bad)">'+bi('Unbalanced: vibration','غير متوازن: اهتزاز')+'</h4><p>'+bi('An unbalanced load damages the motor and gives uneven speed. Stop and rebalance.','الحِمل غير المتوازن يتلف المحرك ويعطي سرعة غير منتظمة. أوقف الجهاز وأعد الموازنة.')+'</p>';
+  else if(!n)h='<p>'+bi('Click slots to load tubes.','اضغط على الفتحات لوضع الأنابيب.')+'</p>';
+  else if(!lid)h='<h4 style="color:var(--bad)">'+bi('Interlock','القفل')+'</h4><p>'+bi('The rotor will not spin with the lid up.','لن يدور الدوّار والغطاء مفتوح.')+'</p>';
+  else h='<h4>'+n+' '+bi('tube(s)','أنبوب')+' · '+(bal()?bi('balanced','متوازن'):bi('unbalanced (red arrow = net imbalance)','غير متوازن (السهم الأحمر = الاختلال الصافي)'))+'</h4>';
+  $('#balMsg').innerHTML=h;const b=$('#balSpin');b.innerHTML=running?bi('Stop','إيقاف'):bi('Start','تشغيل')}
+ $('#balSpin').addEventListener('click',()=>{const n=has.filter(Boolean).length;if(running){running=false;draw();return}if(!n||!$('#balLid').checked){msg();return}running=true;draw()});
+ $('#balClear').addEventListener('click',()=>{has=has.map(()=>false);running=false;draw()});$('#balLid').addEventListener('change',()=>{if(!$('#balLid').checked)running=false;draw()});draw()})();
+// rotor lab
+(function(){const T={swing:{t:['Swinging-bucket','الدلو المتأرجح'],ang:[90,0],d:['Tubes hang vertical at rest and swing to horizontal while spinning, so particles travel along the tube and the pellet lies evenly at the bottom and stays there when the rotor stops. Spinning rotors meet air resistance and make heat.','تتدلى الأنابيب عمودياً عند التوقف وتتأرجح إلى الوضع الأفقي أثناء الدوران، فتسير الجسيمات على طول الأنبوب ويستقر الراسب بانتظام في القاع ويبقى عند توقف الدوّار. الدوّار الدائر يواجه مقاومة الهواء ويولّد حرارة.']},
+ fixed:{t:['Fixed-angle','الزاوية الثابتة'],ang:[30,30],d:['Tubes keep one angle (25°–40° from the axis). Particles hit the outer wall and pack against the side and bottom. When the rotor stops, the pellet slides down: usually poorly packed. Most common rotor for pelleting.','تحتفظ الأنابيب بزاوية واحدة (25°–40° عن المحور). تصطدم الجسيمات بالجدار الخارجي وتتكدس على الجدار والقاع. عند التوقف ينزلق الراسب للأسفل: غالباً راسب غير متماسك. الأكثر شيوعاً للترسيب.']},
+ vert:{t:['Vertical','العمودي'],ang:[0,0],d:['Tubes stay vertical (a zero-angle fixed-angle rotor). Particles only cross the tube width, so K factors are very low (about 5–25) and runs are short. Used mainly in ultracentrifugation for isopycnic separations, for example banding DNA in caesium chloride.','تبقى الأنابيب عمودية (دوّار بزاوية صفر). تقطع الجسيمات عرض الأنبوب فقط لذلك يكون معامل K منخفضاً جداً (نحو 5–25) والتشغيل قصيراً. يُستخدم أساساً في الطرد الفائق للفصل متساوي الكثافة مثل فصل DNA في كلوريد السيزيوم.']}};
+ let k='swing',spin=false;$('#rotType').innerHTML=Object.keys(T).map(x=>'<button class="pill" type="button" data-k="'+x+'" aria-pressed="false">'+bt(T[x].t)+'</button>').join('');
+ function draw(){const t=T[k],a=spin?t.ang[0]:t.ang[1];$$('#rotType .pill').forEach(p=>p.setAttribute('aria-pressed',String(p.dataset.k===k)));
+  const tubeG=(side)=>{const sg=side==='L'?1:-1,px=side==='L'?130:210;const rot=sg*(k==='swing'?(spin?90:0):t.ang[0]);
+   let pel='';const sx=side==='L'?-1:1;
+   if(k==='swing')pel='<rect x="-9" y="'+(spin?58:58)+'" width="18" height="12" rx="3" fill="var(--accent)"/>';
+   else if(k==='fixed')pel=spin?'<rect x="'+(sx<0?-9:5)+'" y="40" width="4" height="30" rx="2" fill="var(--accent)"/>':'<rect x="-9" y="58" width="18" height="12" rx="3" fill="var(--accent)"/>';
+   else pel='<rect x="'+(sx<0?-9:5)+'" y="12" width="4" height="58" rx="2" fill="var(--accent)"/>';
+   return '<g transform="translate('+px+' 50) rotate('+rot+')" style="transition:transform .8s ease"><path d="M-10 0V70a10 10 0 0 0 20 0V0" fill="rgba(120,160,200,.18)" stroke="var(--fg)" stroke-width="2"/>'+pel+'</g>'};
+  $('#rotSvg').innerHTML='<svg class="ltr" viewBox="0 0 340 190"><line x1="170" x2="170" y1="10" y2="180" stroke="var(--muted)" stroke-dasharray="5 4"/><text x="176" y="22" font-size="10" style="fill:var(--muted)">axis</text><rect x="150" y="38" width="40" height="12" rx="3" fill="var(--muted)"/>'+tubeG('L').replace('translate(130','translate(135')+tubeG('R').replace('translate(210','translate(205')+'</svg>';
+  $('#rotSpin').innerHTML=spin?bi('Stop rotor','أوقف الدوّار'):bi('Spin rotor','دوّر الدوّار');$('#rotDetail').innerHTML='<h4>'+bt(t.t)+'</h4><p>'+bt(t.d)+'</p>'}
+ $$('#rotType .pill').forEach(p=>p.addEventListener('click',()=>{k=p.dataset.k;draw()}));$('#rotSpin').addEventListener('click',()=>{spin=!spin;draw()});draw()})();
+// fault finder
+(function(){const F=[
+['Motor will not spin, or runs erratically','المحرك لا يدور أو يعمل بشكل متقطع','Worn carbon brushes; weak, broken or missing brush spring; loose or cracked brush caps.','فرش كربونية مبلية؛ نابض فرشاة ضعيف أو مكسور أو مفقود؛ أغطية الفرش مرتخية أو متشققة.','Replace brushes only with the same size; check springs and caps.','استبدل الفرش بنفس الحجم فقط؛ افحص النوابض والأغطية.'],
+['Will not start or lid will not open','لا يبدأ التشغيل أو الغطاء لا يُفتح','Cover interlock jammed, or the interlock clock is still holding the lid until a set time after zero speed (normal).','قفل الغطاء عالق، أو أن ساعة القفل ما زالت تُبقي الغطاء مقفلاً حتى زمن محدد بعد صفر السرعة (طبيعي).','Wait for zero speed plus the set time; inspect the solenoid, rod and latch.','انتظر صفر السرعة مع الزمن المحدد؛ افحص الملف اللولبي والقضيب والمزلاج.'],
+['Vibration, noise, uneven speed','اهتزاز وضجيج وسرعة غير منتظمة','Load not correctly balanced. The rotor is on the motor shaft, so imbalance damages the motor.','الحِمل غير متوازن. الدوّار على عمود المحرك لذلك يتلف الاختلال المحرك.','Balance the tubes; use dummy tubes; stop the run.','وازِن الأنابيب؛ استخدم أنابيب وهمية؛ أوقف التشغيل.'],
+['Run time is wrong','زمن التشغيل غير صحيح','Timer out of specification. Mechanical timers break or dry out; electronic ones drift.','المؤقت خارج المواصفات. المؤقتات الميكانيكية تتعطل أو تجف والإلكترونية تنحرف.','Lubricate the mechanical timer at preventive maintenance; check the electronic timer against a stopwatch.','شحّم المؤقت الميكانيكي في الصيانة الوقائية؛ قارن المؤقت الإلكتروني بساعة إيقاف.'],
+['rpm reading is not accurate','قراءة rpm غير دقيقة','Speed not calibrated. Rheostat controls can be nonlinear; stepper and servo systems drift.','السرعة غير معايرة. أنظمة rheostat قد تكون غير خطية والخطوية والسيرفو قد تنحرف.','Verify speed with a tachometer regularly.','تحقق من السرعة بمقياس سرعة دوران (tachometer) بانتظام.'],
+['Rotor cracks or fails','تشقق الدوّار أو فشله','Corrosion (aluminium alloys) plus stress; over-speed with dense solutions, plastic adapters or stainless-steel tubes; securing knob not tight.','تآكل (سبائك الألمنيوم) مع إجهاد؛ سرعة زائدة مع المحاليل الكثيفة أو المحوّلات البلاستيكية أو الأنابيب الفولاذية؛ مقبض التثبيت غير مشدود.','Inspect for cracks; follow maximum speed and density ratings; derate speed; tighten the knob fully.','افحص الشقوق؛ التزم بالسرعة القصوى وتصنيف الكثافة؛ خفّض السرعة؛ شُدّ المقبض بالكامل.']];
+ const el=$('#cenFault');el.innerHTML='<div class="pills">'+F.map((f,i)=>'<button class="pill" type="button" data-i="'+i+'" aria-pressed="false">'+bi(f[0],f[1])+'</button>').join('')+'</div><div class="detail"></div>';
+ function pick(i){$$('.pill',el).forEach(p=>p.setAttribute('aria-pressed',String(+p.dataset.i===i)));const f=F[i];$('.detail',el).innerHTML='<h4>'+bi('Likely cause','السبب المحتمل')+'</h4><p>'+bi(f[2],f[3])+'</p><h4>'+bi('What to do','ما العمل')+'</h4><p>'+bi(f[4],f[5])+'</p>'}
+ $$('.pill',el).forEach(p=>p.addEventListener('click',()=>pick(+p.dataset.i)));pick(0);
+ const C=[['Check that loads are balanced before each run','تحقق من اتزان الحِمل قبل كل تشغيل'],['Inspect rotors for cracks and corrosion','افحص الدوّارات بحثاً عن شقوق وتآكل'],['Confirm the rotor knob is fully tight','تأكد أن مقبض الدوّار مشدود بالكامل'],['Verify speed calibration','تحقق من معايرة السرعة'],['Check timer accuracy and lubricate a mechanical timer','افحص دقة المؤقت وشحّم المؤقت الميكانيكي'],['Inspect brushes, springs and caps (replace with same size)','افحص الفرش والنوابض والأغطية (استبدل بنفس الحجم)'],['Test the lid interlock','اختبر قفل الغطاء']];
+ const st=store.get('cenCheck',{});$('#cenCheck').innerHTML=C.map((c,i)=>'<label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" data-i="'+i+'"'+(st[i]?' checked':'')+'><span>'+bi(c[0],c[1])+'</span></label>').join('');
+ $$('#cenCheck input').forEach(c=>c.addEventListener('change',()=>{st[c.dataset.i]=c.checked;store.set('cenCheck',st)}))})();
+cards('cenCards',[['Centrifugation','الطرد المركزي','Separating particles by size, shape, density, medium viscosity and rotor speed.','فصل الجسيمات حسب الحجم والشكل والكثافة ولزوجة الوسط وسرعة الدوّار.'],['Sedimentation','الترسيب','Denser particles sink; lighter float; no density difference, no movement.','الجسيمات الأثقل تغوص والأخف تطفو؛ لا فرق كثافة لا حركة.'],['RCF (×g)','القوة الطاردة النسبية','1.118×10⁻⁵ × R(cm) × rpm².','1.118×10⁻⁵ × R(cm) × rpm².'],['Pellet / supernatant','الراسب / الطافي','Sediment at the bottom / liquid above it.','المادة المترسبة في القاع / السائل فوقها.'],['Swinging-bucket rotor','دوّار الدلو المتأرجح','Tubes horizontal while spinning; up to 12 L.','أنابيب أفقية أثناء الدوران؛ حتى 12 L.'],['Fixed-angle rotor','دوّار الزاوية الثابتة','Fixed tilt; pellets on the side then slides down.','ميل ثابت؛ يتكوّن الراسب على الجانب ثم ينزلق.'],['Vertical rotor','الدوّار العمودي','Zero-angle; isopycnic runs; K = 5–25.','زاوية صفر؛ طرد متساوي الكثافة؛ K = 5–25.'],['K factor','معامل K','Pelleting efficiency; lower is better.','كفاءة الترسيب؛ الأقل أفضل.'],['Interlock','قفل الغطاء','Prevents spinning with the lid open.','يمنع الدوران والغطاء مفتوح.'],['Isopycnic','متساوي الكثافة','Particles settle where gradient density equals their own.','تستقر الجسيمات حيث تساوي كثافة التدرج كثافتها.']]);
+runQuiz('cenQuiz','centrifuge',[
+{q:['The centrifuge works mainly by:','يعمل جهاز الطرد المركزي أساساً بمبدأ:'],o:[['Sedimentation under centripetal acceleration','الترسيب بتأثير التسارع المركزي'],['Evaporation','التبخير'],['Light absorption','امتصاص الضوء'],['Electrophoresis','الترحيل الكهربائي']],a:0,w:['It multiplies gravity to separate by density.','يضاعف الجاذبية للفصل حسب الكثافة.']},
+{q:['RCF at 5,000 rpm and R = 7 cm is about:','قيمة RCF عند 5,000 rpm و R = 7 cm تقارب:'],o:[['196 ×g','196 ×g'],['1,957 ×g','1,957 ×g'],['19,570 ×g','19,570 ×g'],['350 ×g','350 ×g']],a:1,w:['1.118×10⁻⁵ × 7 × 25,000,000 ≈ 1,957.','1.118×10⁻⁵ × 7 × 25,000,000 ≈ 1,957.']},
+{q:['If rpm doubles with the same radius, RCF becomes:','إذا تضاعف rpm بنفس نصف القطر يصبح RCF:'],o:[['2 times','ضعفين'],['4 times','4 أضعاف'],['Half','النصف'],['Unchanged','لا يتغير']],a:1,w:['RCF ∝ rpm².','RCF ∝ rpm².']},
+{q:['Which rotor keeps tubes always vertical?','أي دوّار يبقي الأنابيب عمودية دائماً؟'],o:[['Swinging-bucket','الدلو المتأرجح'],['Fixed-angle','الزاوية الثابتة'],['Vertical','العمودي'],['None','لا شيء']],a:2,w:['Vertical rotors are zero-angle rotors.','الدوّارات العمودية هي دوّارات بزاوية صفر.']},
+{q:['The brake in most centrifuges works by:','يعمل المكبح في معظم الأجهزة عن طريق:'],o:[['Friction pads','وسادات احتكاك'],['Reversing the motor electrical field','عكس المجال الكهربائي للمحرك'],['Opening the lid','فتح الغطاء'],['Cooling the rotor','تبريد الدوّار']],a:1,w:['It is an electrical, not mechanical, brake; use it a few seconds at a time.','مكبح كهربائي لا ميكانيكي؛ يُستخدم بضع ثوانٍ في كل مرة.']},
+{q:['Why use dummy tubes?','لماذا تُستخدم الأنابيب الوهمية؟'],o:[['To add colour','لإضافة لون'],['To balance the load','لموازنة الحِمل'],['To cool the rotor','لتبريد الدوّار'],['To increase rpm','لزيادة rpm']],a:1,w:['An unbalanced load damages the motor and gives uneven speed.','الحِمل غير المتوازن يتلف المحرك ويعطي سرعة غير منتظمة.']},
+{q:['Which centrifuge is used for lipoprotein fractions from plasma?','أي جهاز يُستخدم لفصل أجزاء البروتينات الشحمية من البلازما؟'],o:[['Microcentrifuge','المصغّر'],['Large capacity','كبير السعة'],['Ultracentrifuge','الطرد الفائق'],['Small benchtop','المكتبي الصغير']],a:2,w:['Ultracentrifuges separate lipoprotein fractions and macromolecules.','أجهزة الطرد الفائق تفصل أجزاء البروتينات الشحمية والجزيئات الكبيرة.']},
+{q:['A lower K factor means:','معامل K الأقل يعني:'],o:[['Lower pelleting efficiency','كفاءة ترسيب أقل'],['Higher pelleting efficiency','كفاءة ترسيب أعلى'],['Lower RCF only','RCF أقل فقط'],['Bigger rotor','دوّار أكبر']],a:1,w:['Low K = particles pellet faster.','K منخفض = تترسب الجسيمات أسرع.']}]);
+})();
+</script>
+<script>
+(function(){
+"use strict";
+const {$,$$,bi,bt,clamp,fmt,chain,cards,runQuiz,order,ctl,out,val,setO}=window.L;
+// colorimeter light path
+chain('colChain',[
+{k:'lamp',t:['Tungsten lamp','مصباح التنغستن'],d:['The light source.','مصدر الضوء.']},
+{k:'slit',t:['Slit','الشق'],d:['Narrows the light into a beam.','يحصر الضوء في شعاع ضيق.']},
+{k:'lens',t:['Condensing lens','العدسة المكثِّفة'],d:['Makes the beam parallel and sends it through the sample via a series of lenses.','تجعل الشعاع متوازياً وتوجهه عبر العينة بسلسلة عدسات.']},
+{k:'filt',t:['Colour filter','المرشح اللوني'],d:['Passes only the band the sample absorbs most: red 630–750 nm, green 510–570 nm, blue 360–480 nm. LEDs can do the same job.','يمرر فقط النطاق الذي تمتصه العينة أكثر: أحمر 630–750 nm وأخضر 510–570 nm وأزرق 360–480 nm. ويمكن لمصابيح LED أداء المهمة نفسها.']},
+{k:'cuv',t:['Cuvette','الكيوفيت'],d:['Holds the solution. The clear faces must be in the light path.','يحمل المحلول. يجب أن تكون الأوجه الشفافة في مسار الضوء.']},
+{k:'cell',t:['Photocell','الخلية الضوئية'],d:['Detects the light that passes through and turns it into an electrical signal.','تكشف الضوء النافذ وتحوّله إلى إشارة كهربائية.']},
+{k:'gal',t:['Galvanometer / meter','الجلفانومتر / المقياس'],d:['Shows transmittance or absorbance on an analogue or digital display. A microprocessor may calculate the values.','يعرض النفاذية أو الامتصاصية على شاشة تماثلية أو رقمية. وقد يحسب معالج دقيق القيم.']}],[],true);
+// Beer-Lambert sim
+const SOL={red:{n:['Red solution','محلول أحمر'],rgb:[200,40,50],e:{R:.05,G:1,B:.3}},blue:{n:['Blue solution','محلول أزرق'],rgb:[40,90,210],e:{R:1,G:.25,B:.08}},green:{n:['Green solution','محلول أخضر'],rgb:[40,170,80],e:{R:.65,G:.06,B:.55}},yellow:{n:['Yellow solution','محلول أصفر'],rgb:[225,190,30],e:{R:.02,G:.2,B:1}}};
+const FIL={R:{n:['Red 630–750 nm','أحمر 630–750 nm'],c:'#e5372b'},G:{n:['Green 510–570 nm','أخضر 510–570 nm'],c:'#2fa84f'},B:{n:['Blue 360–480 nm','أزرق 360–480 nm'],c:'#3b6fd4'}};
+let sol='red',fil='G';const K=0.9;
+function pills(id,obj,get,set){$('#'+id).innerHTML=Object.keys(obj).map(k=>'<button class="pill" type="button" data-k="'+k+'" aria-pressed="false">'+bt(obj[k].n)+'</button>').join('');$$('#'+id+' .pill').forEach(p=>p.addEventListener('click',()=>{set(p.dataset.k);upd()}))}
+function best(s){const e=SOL[s].e;return Object.keys(e).sort((a,b)=>e[b]-e[a])[0]}
+function Aof(s,f,c,b){return K*SOL[s].e[f]*c*b}
+function upd(){$$('#bsSol .pill').forEach(p=>p.setAttribute('aria-pressed',String(p.dataset.k===sol)));$$('#bsFil .pill').forEach(p=>p.setAttribute('aria-pressed',String(p.dataset.k===fil)));
+ const c=val('bsC'),b=val('bsB');setO('bsCo',fmt(c));setO('bsBo',b+' cm');const A=Aof(sol,fil,c,b),T=Math.pow(10,-A);const s=SOL[sol].rgb;
+ $('#bsCuv').style.height='88%';$('#bsCuv').style.background='rgba('+s[0]+','+s[1]+','+s[2]+','+clamp(c/2.5*.9+.08,0,.95)+')';
+ $('#bsIn').style.background=FIL[fil].c;$('#bsOut').style.background=FIL[fil].c;$('#bsOut').style.opacity=clamp(T,.04,1);
+ out('bsOutp',[['%T',fmt(T*100,1)+' %'],['A',fmt(A,3),'',A>2?'bad':'good'],['I / I₀',fmt(T,3)]]);
+ const bf=best(sol);$('#bsMsg').innerHTML='<p>'+(A>2?bi('Over range: A is above 2.0. Dilute the sample.','خارج المدى: A أكبر من 2.0. خفّف العينة.'):bi('Within range.','ضمن المدى.'))+' '+(fil===bf?bi('★ This filter is in the band the sample absorbs most (λ max): the most sensitive choice.','★ هذا المرشح في النطاق الذي تمتصه العينة أكثر (λ max): الاختيار الأكثر حساسية.'):bi('Better filter for this solution: '+FIL[bf].n[0]+'.','مرشح أفضل لهذا المحلول: '+FIL[bf].n[1]+'.'))+'</p>';drawCal()}
+pills('bsSol',SOL,()=>sol,v=>{sol=v;fil=best(v)});pills('bsFil',FIL,()=>fil,v=>{fil=v});
+// calibration
+let hid=.62;const STD=[.25,.5,.75,1,1.25],NZ=[.012,-.01,.008,-.015,.01];
+function fit(){const f=best('red');const y=STD.map((c,i)=>Aof('red',f,c,1)+NZ[i]);const n=5,mx=STD.reduce((a,b)=>a+b)/n,my=y.reduce((a,b)=>a+b)/n;let sxy=0,sxx=0;STD.forEach((x,i)=>{sxy+=(x-mx)*(y[i]-my);sxx+=(x-mx)*(x-mx)});const m=sxy/sxx;return{m,q:my-m*mx,y}}
+function drawCal(){const F=fit(),A=val('calA');setO('calAo',fmt(A));const c=(A-F.q)/F.m;const X=x=>40+x*190,Y=y=>180-y*100;
+ $('#calSvg').innerHTML='<svg class="ltr" viewBox="0 0 270 215" style="background:var(--surface2);border-radius:8px"><path d="M40 20V180H250" fill="none" stroke="var(--muted)"/>'+[0,.4,.8,1.2,1.6].map(v=>'<text x="8" y="'+(Y(v)+4)+'" font-size="9" style="fill:var(--muted)">'+v+'</text><line x1="38" x2="42" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--muted)"/>').join('')+[0,.5,1,1.25].map(v=>'<text x="'+(X(v)-6)+'" y="194" font-size="9" style="fill:var(--muted)">'+v+'</text>').join('')+'<line x1="'+X(0)+'" y1="'+Y(F.q)+'" x2="'+X(1.3)+'" y2="'+Y(F.q+F.m*1.3)+'" stroke="var(--accent)" stroke-width="2"/>'+STD.map((x,i)=>'<circle cx="'+X(x)+'" cy="'+Y(F.y[i])+'" r="4" fill="var(--fg)"/>').join('')+'<line x1="'+X(0)+'" x2="'+X(c)+'" y1="'+Y(A)+'" y2="'+Y(A)+'" stroke="var(--bad)" stroke-dasharray="4 3"/><line x1="'+X(c)+'" x2="'+X(c)+'" y1="'+Y(A)+'" y2="180" stroke="var(--bad)" stroke-dasharray="4 3"/><text x="150" y="208" font-size="10">c</text><text x="4" y="12" font-size="10">A</text></svg>';
+ out('calOut',[[bi('Slope (A per unit c)','الميل (A لكل وحدة c)'),fmt(F.m,3)],[bi('Estimated c','التركيز المقدّر'),fmt(c,2),'','good']])}
+$('#bsC').addEventListener('input',upd);$('#bsB').addEventListener('input',upd);$('#calA').addEventListener('input',()=>{$('#calTrue').hidden=true;drawCal()});
+$('#calNew').addEventListener('click',()=>{hid=.2+Math.random()*1;const F=fit();$('#calA').value=clamp(F.q+F.m*hid+(Math.random()-.5)*.02,0,1.6).toFixed(2);$('#calTrue').hidden=true;drawCal()});
+$('#calRev').addEventListener('click',()=>{const t=$('#calTrue');t.hidden=false;t.innerHTML='<p>'+bi('The hidden unknown was c ≈ '+fmt(hid,2)+' (only valid after "New unknown").','التركيز المجهول المخفي كان c ≈ '+fmt(hid,2)+' (صالح فقط بعد «مجهول جديد»).')+'</p>'});
+upd();
+// order games
+order('colOrder1',[['Switch on at least 5 minutes before use so it stabilizes.','شغّل الجهاز قبل الاستخدام بـ 5 دقائق على الأقل ليستقر.'],['Select the most suitable filter and put it in the light path.','اختر المرشح الأنسب وضعه في مسار الضوء.'],['Put the reagent blank (or water) in the cuvette and zero the instrument.','ضع المحلول الصفري (أو الماء) في الكيوفيت وصفّر الجهاز.'],['Place the sample with the clear faces in the light path and read the absorbance.','ضع العينة والأوجه الشفافة في مسار الضوء واقرأ الامتصاصية.'],['If over range (above about 2.0), dilute the sample.','إذا كانت خارج المدى (أكبر من نحو 2.0) خفّف العينة.'],['Recheck the reagent blank at intervals to detect drift.','أعد فحص المحلول الصفري كل فترة لاكتشاف الانحراف.']]);
+order('colOrder2',[['Ground the amplifier input (V1) and adjust R4 for 0 V ± 10 mV at the output.','اؤرِّض مدخل المضخم (V1) واضبط R4 للحصول على 0 V ± 10 mV عند الخرج.'],['Remove the ground and put reference concentrations in cuvettes 1 and 2.','أزل الأرضي وضع التراكيز المرجعية في الكيوفيتين 1 و2.'],['Adjust R1 for 0 V ± 10 mV at the amplifier output.','اضبط R1 للحصول على 0 V ± 10 mV عند خرج المضخم.'],['Keep the reference in cuvette 1 and replace cuvette 2 with the sample.','أبقِ المرجع في الكيوفيت 1 واستبدل الكيوفيت 2 بالعينة.'],['Read the unbalanced voltage in %T or absorbance units.','اقرأ الجهد غير المتوازن بوحدات %T أو الامتصاصية.']]);
+cards('colCards',[['Colorimeter','الكولوريميتر','Measures absorbance of a chosen colour band to get concentration.','يقيس امتصاصية نطاق لوني مختار لإيجاد التركيز.'],['Beer–Lambert law','قانون بير–لامبرت','Absorbance is proportional to concentration (A = εbc).','الامتصاصية تتناسب مع التركيز (A = εbc).'],['Cuvette','الكيوفيت','Small transparent holder for the sample.','حاوية شفافة صغيرة للعينة.'],['Photocell','الخلية الضوئية','Detects the transmitted light.','تكشف الضوء النافذ.'],['Blank','المحلول الصفري','Reagent or water used to set zero.','كاشف أو ماء يُستخدم لضبط الصفر.'],['λ max','λ max','Wavelength of maximum absorption.','الطول الموجي لأقصى امتصاص.'],['Calibration curve','منحنى المعايرة','Absorbance plotted against known concentrations.','الامتصاصية مقابل تراكيز معلومة.'],['Over range','خارج المدى','Absorbance above about 2.0: dilute the sample.','امتصاصية أكبر من نحو 2.0: خفّف العينة.']]);
+runQuiz('colQuiz','colorimeter',[
+{q:['A colorimeter is based on:','يعتمد الكولوريميتر على:'],o:[['Beer–Lambert law','قانون بير–لامبرت'],['Ohm\'s law','قانون أوم'],['Snell\'s law','قانون سنل'],['Boyle\'s law','قانون بويل']],a:0,w:['Absorption is proportional to concentration.','الامتصاص يتناسب مع التركيز.']},
+{q:['The three main parts are:','الأجزاء الرئيسية الثلاثة هي:'],o:[['Lamp, cuvette, photocell','المصباح والكيوفيت والخلية الضوئية'],['Motor, rotor, timer','المحرك والدوّار والمؤقت'],['Electrode, amplifier, pen','القطب والمضخم والقلم'],['Prism, grating, slit','المنشور والمحزوز والشق']],a:0,w:['Light source, cuvette with sample, and photocell.','مصدر الضوء وكيوفيت العينة والخلية الضوئية.']},
+{q:['Which filter range is green?','أي نطاق يخص المرشح الأخضر؟'],o:[['630–750 nm','630–750 nm'],['510–570 nm','510–570 nm'],['360–480 nm','360–480 nm'],['780–1000 nm','780–1000 nm']],a:1,w:['Red 630–750, green 510–570, blue 360–480 nm.','أحمر 630–750 وأخضر 510–570 وأزرق 360–480 nm.']},
+{q:['If absorbance is above about 2.0 you should:','إذا زادت الامتصاصية عن نحو 2.0 فيجب أن:'],o:[['Dilute the sample','تخفف العينة'],['Change the lamp','تغيّر المصباح'],['Ignore it','تتجاهلها'],['Use a bigger cuvette','تستخدم كيوفيت أكبر']],a:0,w:['Over-range readings need dilution.','القراءات خارج المدى تحتاج تخفيفاً.']},
+{q:['Compared with a colorimeter, a spectrophotometer:','بالمقارنة مع الكولوريميتر السبكتروفوتوميتر:'],o:[['Measures only RGB','يقيس RGB فقط'],['Can use any visible wavelength but is more delicate','يمكنه استخدام أي طول موجي مرئي لكنه أكثر حساسية'],['Needs no calibration','لا يحتاج معايرة'],['Is more rugged','أمتن']],a:1,w:['It is more complicated, less rugged and needs regular recalibration.','أعقد وأقل متانة ويحتاج معايرة دورية.']},
+{q:['A calibration curve plots:','منحنى المعايرة يرسم:'],o:[['Absorbance against known concentration','الامتصاصية مقابل تركيز معلوم'],['Time against speed','الزمن مقابل السرعة'],['Voltage against rpm','الجهد مقابل rpm'],['Mass against volume','الكتلة مقابل الحجم']],a:0,w:['The unknown is read from this line.','يُقرأ المجهول من هذا الخط.']}]);
+})();
+</script>
+<script>
+(function(){
+"use strict";
+const {$,$$,bi,bt,clamp,fmt,chain,cards,runQuiz,order,ctl,out,val,setO,go,refresh}=window.L;
+function wl2rgb(w){let r=0,g=0,b=0;if(w>=380&&w<440){r=-(w-440)/60;b=1}else if(w<490){g=(w-440)/50;b=1}else if(w<510){g=1;b=-(w-510)/20}else if(w<580){r=(w-510)/70;g=1}else if(w<645){r=1;g=-(w-645)/65}else if(w<=780){r=1}
+ let f=w<420?.3+.7*(w-380)/40:(w>700?.3+.7*(780-w)/80:1);if(w<380||w>780)f=0;return 'rgb('+Math.round(255*Math.pow(r*f,.8))+','+Math.round(255*Math.pow(g*f,.8))+','+Math.round(255*Math.pow(b*f,.8))+')'}
+// spectrum explorer
+(function(){let g=[];for(let w=380;w<=780;w+=20)g.push(wl2rgb(w)+' '+((w-150)/950*100).toFixed(1)+'%');
+ $('#spBar').style.background='linear-gradient(90deg,var(--surface2) 0%,var(--surface2) '+((380-150)/950*100)+'%,'+g.join(',')+','+'var(--surface2) '+((780-150)/950*100)+'%,var(--surface2) 100%)';
+ ctl(['spW'],()=>{const w=val('spW');setO('spWo',w+' nm');let reg,tr,lamp;
+  if(w<185){reg=['Far UV (overlaps soft X-rays)','UV البعيد (يتداخل مع الأشعة السينية الناعمة)'];tr=['Electronic','إلكترونية'];lamp=['Not used in routine work','لا يُستخدم في العمل الروتيني']}
+  else if(w<380){reg=['Ultraviolet (185 nm to visible)','فوق البنفسجية (من 185 nm إلى المرئي)'];tr=['Electronic','إلكترونية'];lamp=['Deuterium lamp','مصباح الديوتيريوم']}
+  else if(w<=780){reg=['Visible (380–780 nm)','المرئي (380–780 nm)'];tr=['Electronic','إلكترونية'];lamp=['Tungsten-halogen lamp (best in the 320–380 nm changeover)','مصباح التنغستن–هالوجين (الأقوى في منطقة التبديل 320–380 nm)']}
+  else{reg=['Infrared (above visible)','تحت الحمراء (فوق المرئي)'];tr=['Vibrational (near IR / IR), rotational (IR / far IR)','اهتزازية (قريبة/تحت الحمراء)، ودورانية (تحت الحمراء/البعيدة)'];lamp=['Halogen lamp for the near-infrared','مصباح هالوجين للأشعة تحت الحمراء القريبة']}
+  $('#spOut').innerHTML='<div class="stat"><small>'+bi('Region','المنطقة')+'</small><strong style="font-size:.95rem;font-family:inherit">'+bt(reg)+'</strong></div><div class="stat"><small>'+bi('Molecular transition','الانتقال الجزيئي')+'</small><strong style="font-size:.95rem;font-family:inherit">'+bt(tr)+'</strong></div><div class="stat"><small>'+bi('Typical source','المصدر المعتاد')+'</small><strong style="font-size:.95rem;font-family:inherit">'+bt(lamp)+'</strong></div>'})})();
+// energy budget
+ctl(['ebA','ebR','ebS'],()=>{let a=val('ebA'),r=val('ebR'),s=val('ebS');let tot=a+r+s;if(tot>100){const k=100/tot;a*=k;r*=k;s*=k}const t=100-a-r-s;setO('ebAo',Math.round(a)+'%');setO('ebRo',Math.round(r)+'%');setO('ebSo',Math.round(s)+'%');
+ const seg=(v,c,l)=>'<div style="width:'+v+'%;background:'+c+';color:#fff;font-size:.7rem;text-align:center;overflow:hidden;white-space:nowrap">'+(v>8?l:'')+'</div>';
+ $('#ebBar').innerHTML='<div style="display:flex;height:34px;border-radius:8px;overflow:hidden;direction:ltr;border:1px solid var(--line)">'+seg(a,'#c4372c','abs')+seg(r,'#6b7b8c','refl')+seg(s,'#9c3a8c','scat')+seg(t,'#2f8f5b','trans')+'</div><p class="sub" style="margin-top:8px">'+bi('Transmitted: '+Math.round(t)+'%. Absorption spectrophotometry keeps reflection and scattering as low as possible.','النافذ: '+Math.round(t)+'%. يُبقي قياس الامتصاص الانعكاس والتشتت أقل ما يمكن.')+'</p>'});
+// beams
+(function(){let m='single';const P=[['single','Single beam','شعاع مفرد'],['double','Double beam','شعاع مزدوج']];$('#beamPills').innerHTML=P.map(p=>'<button class="pill" type="button" data-m="'+p[0]+'" aria-pressed="false">'+bi(p[1],p[2])+'</button>').join('');
+ const box=(x,y,w,t)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="34" rx="5" fill="var(--surface2)" stroke="var(--muted)"/><text x="'+(x+w/2)+'" y="'+(y+21)+'" text-anchor="middle" font-size="10">'+t+'</text>';
+ function draw(){$$('#beamPills .pill').forEach(p=>p.setAttribute('aria-pressed',String(p.dataset.m===m)));let s='<svg class="ltr" viewBox="0 0 560 190"><g fill="none" stroke="var(--accent)" stroke-width="2.5" class="flow">';
+  if(m==='single')s+='<path d="M90 95H130M200 95H250M330 95H380M440 95H480"/>';
+  else s+='<path d="M90 95H130M200 95H250M330 95H345M345 95V45H380M345 95V145H380M440 45H465V95M440 145H465V95M465 95H490"/>';
+  s+='</g>'+box(20,78,70,'Lamp')+box(130,78,70,'Collimator')+box(250,78,80,'Monochromator');
+  if(m==='single')s+=box(380,78,60,'Sample')+box(480,78,70,'Detector');
+  else s+='<path d="M338 88l14 14" stroke="var(--fg)" stroke-width="3"/><text x="318" y="125" font-size="9">M1</text>'+box(380,28,60,'Reference')+box(380,128,60,'Sample')+box(490,78,66,'Detector');
+  $('#beamSvg').innerHTML=s+'</svg>';
+  $('#beamDetail').innerHTML=m==='single'?'<p>'+bi('One beam passes through the sample. The reading compares the beam intensity before and after the sample is inserted (I₀ then I). Large dynamic range, simple, compact.','يمر شعاع واحد عبر العينة. تقارن القراءة شدة الشعاع قبل إدخال العينة وبعدها (I₀ ثم I). مدى ديناميكي واسع وبسيط وصغير.')+'</p>':'<p>'+bi('A beam splitter (M1) sends light along two paths, one through the reference (air or blank cuvette) and one through the sample. Mirrors (M2, M3) and a grid mirror (M4) bring them to one detector. The comparison is made continuously, so lamp drift cancels and the result is more stable.','يقسم مقسّم الشعاع (M1) الضوء إلى مسارين، أحدهما عبر المرجع (هواء أو كيوفيت صفري) والآخر عبر العينة. تعيد المرايا (M2 وM3) والمرآة الشبكية (M4) الشعاعين إلى كاشف واحد. تتم المقارنة باستمرار فيُلغى انحراف المصباح وتكون النتيجة أكثر ثباتاً.')+'</p>'}
+ $$('#beamPills .pill').forEach(p=>p.addEventListener('click',()=>{m=p.dataset.m;draw()}));draw()})();
+// converter
+ctl(['cvT','cvC'],()=>{const t=val('cvT'),c=val('cvC');setO('cvTo',t+' %');setO('cvCo',fmt(c));const A=Math.log10(100/t),Tc=Math.pow(10,-c)*100;
+ out('cvOut',[['A = log₁₀(100/%T)',fmt(A,3)],[bi('%T at this c','%T عند هذا c'),fmt(Tc,1)+' %']]);
+ const X=x=>35+x*100,Y1=y=>130-y*45,Y2=y=>130-y*0.9;let pa='',pt='';for(let i=0;i<=40;i++){const x=i/20;pa+=(i?'L':'M')+X(x)+' '+Y1(x);pt+=(i?'L':'M')+(X(x)+0)+' '+Y2(Math.pow(10,-x)*100)}
+ $('#cvSvg').innerHTML='<svg class="ltr" viewBox="0 0 250 160" style="background:var(--surface2);border-radius:8px"><path d="M35 15V130H240" fill="none" stroke="var(--muted)"/><path d="'+pa+'" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="'+pt+'" fill="none" stroke="var(--bad)" stroke-width="2"/><circle cx="'+X(c)+'" cy="'+Y1(c)+'" r="4" fill="var(--accent)"/><circle cx="'+X(c)+'" cy="'+Y2(Tc)+'" r="4" fill="var(--bad)"/><text x="40" y="26" font-size="10" style="fill:var(--accent)">A (straight)</text><text x="150" y="60" font-size="10" style="fill:var(--bad)">%T (curve)</text><text x="130" y="150" font-size="10">c</text></svg>'});
+order('speOrder',[['Clean the cuvette, wear gloves, and face it the same way each time.','نظّف الكيوفيت وارتدِ قفازات وضعه بالاتجاه نفسه كل مرة.'],['Prepare the blank solution.','حضّر المحلول الصفري (blank).'],['Set the instrument to the desired wavelength.','اضبط الجهاز على الطول الموجي المطلوب.'],['Insert the blank cuvette with the arrow aligned and press "set zero".','أدخل كيوفيت المحلول الصفري مع محاذاة السهم واضغط «set zero».'],['Insert the sample and read the absorbance.','أدخل العينة واقرأ الامتصاصية.'],['If the wavelength changes, use a new blank and set zero again.','عند تغيير الطول الموجي استخدم محلولاً صفرياً جديداً وصفّر من جديد.']]);
+chain('speParts',[
+{k:'src',t:['1 Radiation source','1 مصدر الإشعاع'],d:['Must give enough, stable, preferably continuous light. Tungsten lamp: cheap, intense, reliable, mostly visible output. Tungsten-halogen: brighter in the 320–380 nm changeover region, longer life, no bulb blackening. Deuterium lamp: the UV source (it replaced hydrogen). Xenon flash lamps are sometimes used. Wanted: brightness over a wide range, stability, long life, low cost.','يجب أن يعطي ضوءاً كافياً ومستقراً ويفضل أن يكون مستمراً. مصباح التنغستن: رخيص وشديد وموثوق وأغلب خرجه مرئي. التنغستن–هالوجين: أسطع في منطقة التبديل 320–380 nm وعمر أطول ولا يسوَّد زجاجه. مصباح الديوتيريوم: مصدر الـ UV (حلّ محل الهيدروجين). وتُستخدم مصابيح الزينون الوميضية أحياناً. المطلوب: سطوع في نطاق واسع، ثبات، عمر طويل، كلفة منخفضة.']},
+{k:'sel',t:['2 Wavelength selector','2 محدد الطول الموجي'],d:['Two classes of device: filters and monochromators. A monochromator disperses the beam by wavelength with a prism (glass or quartz) or a diffraction grating, and a slit passes the band of interest. It isolates narrower bands than a filter.','نوعان من الأجهزة: المرشحات وأحاديات اللون. يفرّق أحادي اللون الشعاع حسب الطول الموجي بمنشور (زجاج أو كوارتز) أو محزوز حيود ويمرر الشق النطاق المطلوب. وهو يعزل نطاقات أضيق من المرشح.']},
+{k:'fil',t:['3 Optical filters','3 المرشحات الضوئية'],d:['A filter is a transparent medium that isolates a wavelength band. Glass filters work by absorbing; they can be low-pass, high-pass or band-pass. Needs: high transmittance at the wanted wavelength, low elsewhere. Types: absorption and interference (multilayer). Interference filters suit high-intensity light because they remove unwanted light by transmission and reflection, not absorption.','المرشح وسط شفاف يعزل نطاقاً من الأطوال الموجية. المرشحات الزجاجية تعمل بالامتصاص ويمكن أن تكون تمرير منخفض أو عالٍ أو نطاقي. المطلوب: نفاذية عالية عند الطول المطلوب ومنخفضة عند غيره. الأنواع: امتصاصية وتداخلية (متعددة الطبقات). المرشحات التداخلية تناسب الضوء الشديد لأنها تزيل الضوء غير المطلوب بالنفاذ والانعكاس لا بالامتصاص.']},
+{k:'opt',t:['4 Optical components','4 المكونات البصرية'],d:['Windows, mirrors and condensers made from materials chosen for the wavelength range. Glass surfaces are coated with magnesium fluoride (a quarter-wave thick) to reduce reflections and scatter. Condensers make the beam smaller or parallel. Front-surface aluminized mirrors can replace lenses, avoiding chromatic aberration. Beam splitters for double-beam use are multilayer coatings on an optical flat, half-silvered mirrors, or stacks of thin glass plates.','نوافذ ومرايا ومكثفات من مواد تُختار حسب نطاق الطول الموجي. تُطلى أسطح الزجاج بفلوريد المغنيسيوم (بسمك ربع طول موجي) لتقليل الانعكاس والتشتت. المكثفات تصغّر الشعاع أو تجعله متوازياً. المرايا المطلية بالألمنيوم من الواجهة الأمامية قد تحل محل العدسات وتتجنب الزيغ اللوني. مقسّمات الشعاع في الأجهزة المزدوجة طلاءات متعددة الطبقات على سطح بصري مستوٍ أو مرايا نصف مفضّضة أو رصة ألواح زجاجية رقيقة.']},
+{k:'det',t:['5 Photosensitive detectors','5 الكواشف الحساسة للضوء'],d:['Turn light energy into electrical energy so intensity can be measured. The current goes to a sensitive galvanometer directly or after amplification. Examples: barrier-layer cell, phototube, photomultiplier tube, photodiode array (the eye in visual comparators). Needs: linear response over the band and enough sensitivity.','تحول طاقة الضوء إلى طاقة كهربائية لقياس الشدة. يذهب التيار إلى جلفانومتر حساس مباشرة أو بعد تضخيم. أمثلة: الخلية ذات الحاجز (barrier-layer)، الأنبوب الضوئي، أنبوب المضاعف الضوئي، مصفوفة الصمامات الضوئية (والعين في المقارنات البصرية). المطلوب: استجابة خطية في النطاق وحساسية كافية.']},
+{k:'cel',t:['6 Sample holders','6 حاملات العينة'],d:['Liquids go in cells (cuvettes) of silica, glass or Perspex, with highly polished faces to keep reflection and scatter low. Solids are usually dissolved in a transparent liquid. Gases go in sealed cells. The holder sits between the source and the detector. (General note: silica transmits UV; ordinary glass and plastic do not.)','توضع السوائل في خلايا (كيوفيت) من السيليكا أو الزجاج أو البيرسبكس وتكون الأوجه مصقولة جداً لتقليل الانعكاس والتشتت. المواد الصلبة تُذاب عادةً في سائل شفاف. الغازات في خلايا محكمة الإغلاق. تُوضع الحاملة بين المصدر والكاشف. (ملاحظة عامة: السيليكا تنفذ UV بينما الزجاج العادي والبلاستيك لا.)']}],[],false);
+// monochromator
+ctl(['moL','moW'],()=>{const l=val('moL'),w=val('moW');setO('moLo',l+' nm');setO('moWo',w+' nm');let g=[];for(let x=380;x<=780;x+=20)g.push(wl2rgb(x)+' '+((x-380)/4).toFixed(1)+'%');
+ $('#monoBar').style.background='linear-gradient(90deg,'+g.join(',')+')';const s=$('#monoSlit');s.style.left=((l-w/2-380)/4)+'%';s.style.width=(w/4)+'%';$('#monoOut').style.background=wl2rgb(l);$('#monoOut').style.opacity=clamp(.35+w/100,.4,1)});
+cards('speCards',[['Spectrophotometer','السبكتروفوتوميتر','Measures absorption at a chosen wavelength.','يقيس الامتصاص عند طول موجي مختار.'],['Transmittance','النفاذية','T = I/I₀; %T = T × 100.','T = I/I₀؛ %T = T × 100.'],['Absorbance','الامتصاصية','A = log₁₀(I₀/I) = εbc.','A = log₁₀(I₀/I) = εbc.'],['Monochromator','أحادي اللون','Prism or grating plus slit to isolate a narrow band.','منشور أو محزوز مع شق لعزل نطاق ضيق.'],['Single / double beam','شعاع مفرد / مزدوج','Double beam compares reference and sample at once.','المزدوج يقارن المرجع والعينة في آن واحد.'],['Deuterium lamp','مصباح الديوتيريوم','UV source.','مصدر فوق بنفسجي.'],['Tungsten-halogen lamp','مصباح التنغستن–هالوجين','Visible and near-IR source, long life.','مصدر للمرئي وتحت الحمراء القريبة بعمر طويل.'],['Photomultiplier tube','أنبوب المضاعف الضوئي','Very sensitive detector.','كاشف شديد الحساسية.'],['Extinction coefficient ε','معامل الانطفاء ε','Absorbing strength per unit concentration and path.','قوة الامتصاص لكل وحدة تركيز ومسار.'],['Cuvette','الكيوفيت','Polished-face cell for the sample.','خلية بأوجه مصقولة للعينة.']]);
+runQuiz('speQuiz','spectrophotometer',[
+{q:['Visible light covers about:','المنطقة المرئية تغطي نحو:'],o:[['380–780 nm','380–780 nm'],['185–380 nm','185–380 nm'],['800–2500 nm','800–2500 nm'],['10–100 nm','10–100 nm']],a:0,w:['UV starts at 185 nm; IR lies above the visible.','تبدأ UV من 185 nm وتحت الحمراء فوق المرئي.']},
+{q:['Absorbance equals:','الامتصاصية تساوي:'],o:[['log₁₀(I₀/I)','log₁₀(I₀/I)'],['I/I₀','I/I₀'],['I₀ − I','I₀ − I'],['100/%T','100/%T']],a:0,w:['A = log₁₀(1/T) = log₁₀(I₀/I).','A = log₁₀(1/T) = log₁₀(I₀/I).']},
+{q:['A sample has 10 %T. Its absorbance is:','عينة نفاذيتها 10 %T. امتصاصيتها:'],o:[['0.1','0.1'],['1','1'],['2','2'],['10','10']],a:1,w:['A = log₁₀(100/10) = 1.','A = log₁₀(100/10) = 1.']},
+{q:['Which plot against concentration is a straight line?','أي رسم مقابل التركيز يكون خطاً مستقيماً؟'],o:[['Absorbance','الامتصاصية'],['%T on a linear axis','%T على محور خطي'],['Both','كلاهما'],['Neither','لا أحد']],a:0,w:['A = εbc. %T falls exponentially.','A = εbc. أما %T فتنخفض أسياً.']},
+{q:['A double-beam instrument:','الجهاز ذو الشعاع المزدوج:'],o:[['Compares reference and sample paths at once','يقارن مساري المرجع والعينة معاً'],['Has no detector','ليس فيه كاشف'],['Only measures IR','يقيس IR فقط'],['Uses two lamps always','يستخدم مصباحين دائماً']],a:0,w:['More stable for comparison measurements.','أكثر ثباتاً في قياسات المقارنة.']},
+{q:['Which lamp is the usual UV source?','أي مصباح هو مصدر UV المعتاد؟'],o:[['Tungsten','التنغستن'],['Deuterium','الديوتيريوم'],['Neon','النيون'],['LED only','LED فقط']],a:1,w:['Deuterium superseded hydrogen as the UV source.','حلّ الديوتيريوم محل الهيدروجين كمصدر UV.']},
+{q:['Compared with filters, monochromators:','بالمقارنة مع المرشحات، أحاديات اللون:'],o:[['Isolate narrower bands','تعزل نطاقات أضيق'],['Absorb all light','تمتص كل الضوء'],['Have no slit','ليس لها شق'],['Are only for X-rays','للأشعة السينية فقط']],a:0,w:['They disperse by wavelength and a slit passes the band of interest.','تفرّق الضوء حسب الطول الموجي ويمرر الشق النطاق المطلوب.']},
+{q:['When you change the wavelength you must:','عند تغيير الطول الموجي يجب أن:'],o:[['Use a new blank and set zero again','تستخدم محلولاً صفرياً جديداً وتصفّر من جديد'],['Do nothing','لا تفعل شيئاً'],['Change the lamp','تغيّر المصباح'],['Dilute the sample','تخفف العينة']],a:0,w:['The blank is wavelength specific.','المحلول الصفري خاص بكل طول موجي.']}]);
+// finish
+window.L.refresh();
+const h=location.hash.slice(1);go(h||'start');
+})();
+</script>
+
+</body></html>
